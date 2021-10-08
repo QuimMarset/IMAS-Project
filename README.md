@@ -1,2 +1,2 @@
-# IMAS---Project
+# IMAS-Project
 Introduction to Multi-Agent Systems Project
