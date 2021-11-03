@@ -8,5 +8,7 @@ import jade.domain.FIPAException;
 import jade.util.Logger;
 
 public class ClassifierAgetn extends Agent{
+    protected void setup() {
 
+    }
 }

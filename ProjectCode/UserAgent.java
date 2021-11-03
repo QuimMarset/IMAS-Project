@@ -29,55 +29,23 @@ import jade.util.Logger;
  */
 public class UserAgent extends Agent {
 
-    private final Logger myLogger = Logger.getMyLogger(getClass().getName());
-
-    private class WaitPingAndReplyBehaviour extends CyclicBehaviour {
-
-        public WaitPingAndReplyBehaviour(Agent a) {
-            super(a);
-        }
-
+    public class behaviour extends Behaviour{ // this is to be change, is just for the skeleton
         public void action() {
-            ACLMessage msg = myAgent.receive();
-            if (msg != null) {
-                ACLMessage reply = msg.createReply();
 
-                if (msg.getPerformative() == ACLMessage.REQUEST) {
-                    String content = msg.getContent();
-                    if ((content != null) && (content.contains("ping"))) {
-                        myLogger.log(Logger.INFO, "Agent " + getLocalName() + " - Received PING Request from "
-                                + msg.getSender().getLocalName());
-                        reply.setPerformative(ACLMessage.INFORM);
-                        reply.setContent("pong");
-                    } else {
-                        myLogger.log(Logger.INFO, "Agent " + getLocalName() + " - Unexpected request [" + content
-                                + "] received from " + msg.getSender().getLocalName());
-                        reply.setPerformative(ACLMessage.REFUSE);
-                        reply.setContent("( UnexpectedContent (" + content + "))");
-                    }
-
-                } else {
-                    myLogger.log(Logger.INFO,
-                            "Agent " + getLocalName() + " - Unexpected message ["
-                                    + ACLMessage.getPerformative(msg.getPerformative()) + "] received from "
-                                    + msg.getSender().getLocalName());
-                    reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
-                    reply.setContent("( (Unexpected-act " + ACLMessage.getPerformative(msg.getPerformative()) + ") )");
-                }
-                send(reply);
-            } else {
-                block();
-            }
         }
-    } // END of inner class WaitPingAndReplyBehaviour
+        public boolean done(){
+            
+        }
+    }
+
 
     protected void setup() {
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType("PingAgent");
+        sd.setType("UserAgent");
         sd.setName(getName());
-        sd.setOwnership("TILAB");
+        //sd.setOwnership("TILAB");
         dfd.setName(getAID());
         dfd.addServices(sd);
         try {
