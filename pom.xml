@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>urv.imas</groupId>
-    <artifactId>JadeExample</artifactId>
+    <artifactId>IMAS-Project</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <repositories>
@@ -48,6 +48,30 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>jade-gui-execution</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <configuration>
+                            <mainClass>jade.Boot</mainClass>
+                            <arguments>
+                                <argument>-gui</argument>
+                                <argument>-agents</argument>
+                                <argument>
+                                    userAgent:Agents.UserAgent;
+                                    dataManagerAgent:Agents.DataManagerAgent;
+                                    finalClassifierAgent:Agents.FinalClassifierAgent
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <properties>
@@ -77,6 +101,13 @@
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.32</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/nz.ac.waikato.cms.weka/weka-stable -->
+        <dependency>
+            <groupId>nz.ac.waikato.cms.weka</groupId>
+            <artifactId>weka-stable</artifactId>
+            <version>3.8.5</version>
+        </dependency>
+
     </dependencies>
 
 </project>

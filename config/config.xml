@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<SystemProperties>
+    <classifiers>10</classifiers>
+    <dataset>E:\MAI\IMAS\Lab\IMAS-Project\datasets\audit_risk.arff</dataset>
+    <attributes>6</attributes>
+</SystemProperties>
