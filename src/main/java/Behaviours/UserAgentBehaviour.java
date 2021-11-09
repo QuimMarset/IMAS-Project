@@ -6,6 +6,7 @@ import jade.core.AID;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,15 +14,16 @@ import java.io.InputStreamReader;
 
 enum UserAgentState {
     InitSystem,
-    ReceivePetitions
+    WaitForTraining,
+    ReceivePetitions,
 }
 
-public class HumanInteractionBehaviour extends CyclicBehaviour {
+public class UserAgentBehaviour extends CyclicBehaviour {
 
     private UserAgent userAgent;
     private UserAgentState userAgentState;
 
-    public HumanInteractionBehaviour(UserAgent userAgent) {
+    public UserAgentBehaviour(UserAgent userAgent) {
         super(userAgent);
         this.userAgent = userAgent;
         this.userAgentState = UserAgentState.InitSystem;
@@ -31,7 +33,10 @@ public class HumanInteractionBehaviour extends CyclicBehaviour {
     public void action() {
         if (this.userAgentState == UserAgentState.InitSystem) {
             initSystemAction();
-            this.userAgentState = UserAgentState.ReceivePetitions;
+            this.userAgentState = UserAgentState.WaitForTraining;
+        }
+        else if (this.userAgentState == UserAgentState.WaitForTraining) {
+            waitForClassifiersToTrain();
         }
         else {
             receivePetitionsAction();
@@ -41,9 +46,6 @@ public class HumanInteractionBehaviour extends CyclicBehaviour {
     private void initSystemAction() {
         Configuration configuration = readConfigurationFile();
         sendConfigurationToDataManager(configuration);
-        // read xml/properties to get nº classifiers, dataset path, nº train attributes
-        // store as a property
-        // send to DataManager
     }
 
     private void receivePetitionsAction() {
@@ -74,5 +76,16 @@ public class HumanInteractionBehaviour extends CyclicBehaviour {
             e.printStackTrace();
         }
         this.userAgent.send(message);
+    }
+
+    private void waitForClassifiersToTrain() {
+        MessageTemplate messageTemplate = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+        ACLMessage message = this.userAgent.receive(messageTemplate);
+        if (message != null && message.getSender().getLocalName().equals("dataManagerAgent")) {
+            this.userAgentState = UserAgentState.ReceivePetitions;
+        }
+        else {
+            this.block();
+        }
     }
 }

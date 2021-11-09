@@ -50,11 +50,6 @@ public class DataManagerBehaviour extends CyclicBehaviour {
             catch (UnreadableException e) {
                 e.printStackTrace();
             }
-            // get configuration parameters from message
-            // create classifiers
-            // pass the data
-            // move agent to Waiting state for the classifiers to train
-            // once trained return message to UserAgent to indicate the queries can start
         }
         else {
             this.block();

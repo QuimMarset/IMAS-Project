@@ -1,6 +1,6 @@
 package Agents;
 
-import Behaviours.HumanInteractionBehaviour;
+import Behaviours.UserAgentBehaviour;
 import jade.core.*;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -22,8 +22,7 @@ public class UserAgent extends Agent {
 
         try {
             DFService.register(this, dfd);
-            addBehaviour(new HumanInteractionBehaviour(this));
-            // addBehaviour(new );
+            addBehaviour(new UserAgentBehaviour(this));
 
         }
         catch (FIPAException e) {
