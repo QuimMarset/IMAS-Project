@@ -13,13 +13,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Properties;
 
 public class Configuration implements Serializable {
 
     private int numClassifiers;
-    private String datasetPath;
+    private String trainDatasetPath;
+    private String testDatasetPath;
     private int numTrainAttributes;
+    private String testIndices;
 
     public Configuration(String filePath) {
 
@@ -32,9 +33,10 @@ public class Configuration implements Serializable {
             Element rootElement = document.getDocumentElement();
 
             this.numClassifiers = Integer.parseInt(rootElement.getElementsByTagName("classifiers").item(0).getTextContent());
-            this.datasetPath = rootElement.getElementsByTagName("dataset").item(0).getTextContent();
+            this.trainDatasetPath = rootElement.getElementsByTagName("train-dataset").item(0).getTextContent();
+            this.testDatasetPath = rootElement.getElementsByTagName("test-dataset").item(0).getTextContent();
             this.numTrainAttributes = Integer.parseInt(rootElement.getElementsByTagName("attributes").item(0).getTextContent());
-
+            this.testIndices = rootElement.getElementsByTagName("test-indices").item(0).getTextContent();
         }
         catch (ParserConfigurationException e) {
             e.printStackTrace();
@@ -55,8 +57,19 @@ public class Configuration implements Serializable {
         return this.numTrainAttributes;
     }
 
-    public String getDatasetPath() {
-        return this.datasetPath;
+    public String getTrainDatasetPath() {
+        return this.trainDatasetPath;
     }
 
+    public String getTestDatasetPath() {
+        return this.testDatasetPath;
+    }
+
+    public String getTestIndices() {
+        return this.testIndices;
+    }
+
+    public void setTestIndices(String testIndices) {
+        this.testIndices = testIndices;
+    }
 }

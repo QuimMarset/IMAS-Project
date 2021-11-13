@@ -7,10 +7,12 @@ import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.util.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.logging.Level;
 
 enum UserAgentState {
     InitSystem,
@@ -19,6 +21,8 @@ enum UserAgentState {
 }
 
 public class UserAgentBehaviour extends CyclicBehaviour {
+
+    private final Logger logger = Logger.getMyLogger(getClass().getName());
 
     private UserAgent userAgent;
     private UserAgentState userAgentState;
@@ -49,12 +53,22 @@ public class UserAgentBehaviour extends CyclicBehaviour {
     }
 
     private void receivePetitionsAction() {
-
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        logger.log(Level.INFO, "Enter 15 numbers between 0-49 (comma separated): ");
+        try {
+            String testingIndices = br.readLine();
+            Configuration configuration = readConfigurationFile();
+            configuration.setTestIndices(testingIndices);
+            sendConfigurationToDataManager(configuration);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private Configuration readConfigurationFile() {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        System.out.print("Enter the path to the desired configuration file to load:");
+        logger.log(Level.INFO, "Enter the path to the desired configuration file to load: ");
         try {
             String configFilePath = br.readLine();
             Configuration configuration = new Configuration(configFilePath);

@@ -12,6 +12,8 @@ import jade.domain.FIPAException;
 import jade.util.Logger;
 import weka.classifiers.trees.J48;
 
+import java.util.logging.Level;
+
 public class ClassifierAgent extends Agent {
     private final Logger logger = Logger.getMyLogger(getClass().getName());
 
@@ -22,7 +24,7 @@ public class ClassifierAgent extends Agent {
     }
 
     protected void setup() {
-        System.out.println("Classifier " + getAID() + " created!");
+        logger.log(Level.INFO, "Classifier " + getAID() + " created!");
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();

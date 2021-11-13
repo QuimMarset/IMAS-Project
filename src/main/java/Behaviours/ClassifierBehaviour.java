@@ -24,6 +24,7 @@ public class ClassifierBehaviour extends CyclicBehaviour {
             message.addReceiver(new AID("dataManagerAgent", AID.ISLOCALNAME));
             this.classifierAgent.send(message);
             this.send = false;
+            //TODO someone
         }
     }
 }

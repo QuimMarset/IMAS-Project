@@ -2,13 +2,17 @@ package Behaviours;
 
 import Agents.DataManagerAgent;
 import Utils.Configuration;
+import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+import jade.util.Logger;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
+
+import java.util.logging.Level;
 
 enum DataManagerAgentState {
     Idle,
@@ -17,6 +21,8 @@ enum DataManagerAgentState {
 }
 
 public class DataManagerBehaviour extends CyclicBehaviour {
+
+    private final Logger logger = Logger.getMyLogger(getClass().getName());
 
     private DataManagerAgent dataManagerAgent;
     private DataManagerAgentState dataManagerAgentState;
@@ -35,6 +41,10 @@ public class DataManagerBehaviour extends CyclicBehaviour {
         }
         else if (this.dataManagerAgentState == DataManagerAgentState.WaitingForTrain) {
             waitForClassifiersToTrain();
+        }
+        else
+        {
+            waitForTestQueryToClassify();
         }
     }
 
@@ -60,18 +70,18 @@ public class DataManagerBehaviour extends CyclicBehaviour {
         int numClassifiers = configuration.getNumClassifiers();
         this.numClassifiers = numClassifiers;
 
-        String datasetPath = configuration.getDatasetPath();
+        String trainDatasetPath = configuration.getTrainDatasetPath();
         int numAttributes = configuration.getNumTrainAttributes();
 
         ContainerController containerController = this.dataManagerAgent.getContainerController();
 
         String packageName = this.dataManagerAgent.getClass().getPackage().getName();
 
-        // DatasetManager datasetManager = new DatasetManager(datasetPath);
+        // DatasetManager datasetManager = new DatasetManager(trainDatasetPath);
 
         for(int i = 0; i < numClassifiers; ++i) {
             try {
-                Object[] params = {datasetPath, numAttributes};
+                Object[] params = {trainDatasetPath, numAttributes};
                 AgentController agentController = containerController.createNewAgent("classifierAgent_" + (i+1),
                         packageName + ".ClassifierAgent", params);
                 agentController.start();
@@ -89,7 +99,33 @@ public class DataManagerBehaviour extends CyclicBehaviour {
             ++this.numTrainedClassifiers;
             if (this.numClassifiers == this.numTrainedClassifiers) {
                 this.dataManagerAgentState = DataManagerAgentState.WaitingForQueries;
-                System.out.println("Classifiers trained!");
+                logger.log(Level.INFO, "All classifiers trained!");
+                // Send message to UserAgent that training is complete
+                informTrainingCompletion();
+            }
+        }
+        else {
+            this.block();
+        }
+    }
+
+    private void informTrainingCompletion() {
+        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+        message.addReceiver(new AID("userAgent", AID.ISLOCALNAME));
+        this.dataManagerAgent.send(message);
+    }
+
+    private void waitForTestQueryToClassify() {
+        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
+        ACLMessage message = this.dataManagerAgent.receive(performativeFilter);
+        if (message != null) {
+            try {
+                Configuration configuration = (Configuration) message.getContentObject();
+                logger.log(Level.INFO, "Received petition to classify the following indices: " + configuration.getTestIndices());
+                //TODO
+            }
+            catch (UnreadableException e) {
+                e.printStackTrace();
             }
         }
         else {
