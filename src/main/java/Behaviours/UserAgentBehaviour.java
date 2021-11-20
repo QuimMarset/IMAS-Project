@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
+import static Utils.PredictionEvaluatorUtils.evaluateAndPrintPredictionResults;
+
 enum UserAgentState {
     InitSystem,
     WaitForTraining,
@@ -79,7 +81,7 @@ public class UserAgentBehaviour extends CyclicBehaviour {
                         generatedIndices.add((int) (Math.random()*(50+1)));
                     } while (generatedIndices.size() < 15);
                     testingIndices = generatedIndices.toString();
-                    testingIndices = testingIndices.substring(1, testingIndices.length() - 1); //TODO Shivani check if CSV
+                    testingIndices = testingIndices.substring(1, testingIndices.length() - 1);
                     break;
                 case 2: logger.log(Level.INFO, "Enter 15 numbers between 0-49 (comma separated): ");
                     testingIndices = br.readLine();
@@ -152,11 +154,11 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         MessageTemplate messageTemplate = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
         ACLMessage message = this.userAgent.receive(messageTemplate);
         if (message != null && message.getSender().getLocalName().equals("dataManagerAgent")) {
-            //TODO Shivani: get predictions for the 15 data rows
+            //TODO: get predictions for the 15 data rows
             try {
                 AuditDataRowWithPrediction[] petitionResults = (AuditDataRowWithPrediction[]) message.getContentObject();
                 logger.log(Level.INFO, "Received classifications for the chosen ");
-                //Print them vs actual values + evaluations (confusion matrix, maybe?)
+                evaluateAndPrintPredictionResults(petitionResults);
             }
             catch (UnreadableException e) {
                 e.printStackTrace();

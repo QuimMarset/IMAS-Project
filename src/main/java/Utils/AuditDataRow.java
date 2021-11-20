@@ -1,5 +1,8 @@
 package Utils;
 
+import lombok.Data;
+
+@Data
 public class AuditDataRow {
     private float Sector_score;
     private String LOCATION_ID;
