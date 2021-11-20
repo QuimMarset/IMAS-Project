@@ -1,23 +1,27 @@
 package Behaviours;
 
 import Agents.UserAgent;
+import Utils.AuditDataRowWithPrediction;
 import Utils.Configuration;
 import jade.core.AID;
-import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 import jade.util.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 enum UserAgentState {
     InitSystem,
     WaitForTraining,
     ReceivePetitions,
+    WaitForPetitionResults
 }
 
 public class UserAgentBehaviour extends CyclicBehaviour {
@@ -26,6 +30,8 @@ public class UserAgentBehaviour extends CyclicBehaviour {
 
     private UserAgent userAgent;
     private UserAgentState userAgentState;
+
+    private String configFilePath;
 
     public UserAgentBehaviour(UserAgent userAgent) {
         super(userAgent);
@@ -42,39 +48,78 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         else if (this.userAgentState == UserAgentState.WaitForTraining) {
             waitForClassifiersToTrain();
         }
-        else {
+        else if (this.userAgentState == UserAgentState.ReceivePetitions) {
             receivePetitionsAction();
+            this.userAgentState = UserAgentState.WaitForPetitionResults;
+        }
+        else {
+            waitForPetitionResults();
         }
     }
 
     private void initSystemAction() {
-        Configuration configuration = readConfigurationFile();
+        Configuration configuration = readConfigurationFile(null);
         sendConfigurationToDataManager(configuration);
     }
 
-    private void receivePetitionsAction() {
+    private String promptQueryingAndReturnTestingIndices()
+    {
+        String testingIndices = null;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        logger.log(Level.INFO, "Enter 15 numbers between 0-49 (comma separated): ");
+        logger.log(Level.INFO, "Select querying mode:");
+        logger.log(Level.INFO, "1. Randomly auto-elect 15 data rows");
+        logger.log(Level.INFO, "2. Manually enter the data rows indices");
+        logger.log(Level.INFO, "Choice: ");
         try {
-            String testingIndices = br.readLine();
-            Configuration configuration = readConfigurationFile();
-            configuration.setTestIndices(testingIndices);
-            sendConfigurationToDataManager(configuration);
+            int queryingMode = Integer.parseInt(br.readLine());
+            switch (queryingMode)
+            {
+                case 1: List<Integer> generatedIndices = new ArrayList<>();
+                    do {
+                        generatedIndices.add((int) (Math.random()*(50+1)));
+                    } while (generatedIndices.size() < 15);
+                    testingIndices = generatedIndices.toString();
+                    testingIndices = testingIndices.substring(1, testingIndices.length() - 1); //TODO Shivani check if CSV
+                    break;
+                case 2: logger.log(Level.INFO, "Enter 15 numbers between 0-49 (comma separated): ");
+                    testingIndices = br.readLine();
+                    break;
+                default: logger.log(Level.WARNING, "Invalid choice, choose from the above options!");
+                    break;
+            }
         }
         catch (IOException e) {
             e.printStackTrace();
         }
+        return testingIndices;
     }
 
-    private Configuration readConfigurationFile() {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        logger.log(Level.INFO, "Enter the path to the desired configuration file to load: ");
+    private void receivePetitionsAction() {
+        String testingIndices = null;
+        do {
+            testingIndices = promptQueryingAndReturnTestingIndices();
+        } while (null == testingIndices);
+        Configuration configuration = readConfigurationFile(this.configFilePath);
+        configuration.setTestIndices(testingIndices);
+        sendConfigurationToDataManager(configuration);
+    }
+
+    private Configuration readConfigurationFile(String configFilePath) {
+        if (configFilePath == null) {
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            logger.log(Level.INFO, "Enter the path to the desired configuration file to load: ");
+            try {
+                this.configFilePath = br.readLine();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         try {
-            String configFilePath = br.readLine();
-            Configuration configuration = new Configuration(configFilePath);
+            Configuration configuration = new Configuration(this.configFilePath);
             return configuration;
         }
-        catch (IOException e) {
+        catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -97,6 +142,25 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         ACLMessage message = this.userAgent.receive(messageTemplate);
         if (message != null && message.getSender().getLocalName().equals("dataManagerAgent")) {
             this.userAgentState = UserAgentState.ReceivePetitions;
+        }
+        else {
+            this.block();
+        }
+    }
+
+    private void waitForPetitionResults() {
+        MessageTemplate messageTemplate = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+        ACLMessage message = this.userAgent.receive(messageTemplate);
+        if (message != null && message.getSender().getLocalName().equals("dataManagerAgent")) {
+            //TODO Shivani: get predictions for the 15 data rows
+            try {
+                AuditDataRowWithPrediction[] petitionResults = (AuditDataRowWithPrediction[]) message.getContentObject();
+                logger.log(Level.INFO, "Received classifications for the chosen ");
+                //Print them vs actual values + evaluations (confusion matrix, maybe?)
+            }
+            catch (UnreadableException e) {
+                e.printStackTrace();
+            }
         }
         else {
             this.block();
