@@ -20,6 +20,7 @@ public class Configuration implements Serializable {
     private String trainDatasetPath;
     private String testDatasetPath;
     private int numTrainAttributes;
+    private int numTestAttributes;
     private String testIndices;
 
     public Configuration(String filePath) {
@@ -35,7 +36,8 @@ public class Configuration implements Serializable {
             this.numClassifiers = Integer.parseInt(rootElement.getElementsByTagName("classifiers").item(0).getTextContent());
             this.trainDatasetPath = rootElement.getElementsByTagName("train-dataset").item(0).getTextContent();
             this.testDatasetPath = rootElement.getElementsByTagName("test-dataset").item(0).getTextContent();
-            this.numTrainAttributes = Integer.parseInt(rootElement.getElementsByTagName("attributes").item(0).getTextContent());
+            this.numTrainAttributes = Integer.parseInt(rootElement.getElementsByTagName("train-attributes").item(0).getTextContent());
+            this.numTestAttributes = Integer.parseInt(rootElement.getElementsByTagName("test-attributes").item(0).getTextContent());
             this.testIndices = rootElement.getElementsByTagName("test-indices").item(0).getTextContent();
         }
         catch (ParserConfigurationException e) {
@@ -55,6 +57,10 @@ public class Configuration implements Serializable {
 
     public int getNumTrainAttributes() {
         return this.numTrainAttributes;
+    }
+
+    public int getNumTestAttributes() {
+        return this.numTestAttributes;
     }
 
     public String getTrainDatasetPath() {
