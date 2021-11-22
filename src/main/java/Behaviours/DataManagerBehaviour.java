@@ -2,6 +2,7 @@ package Behaviours;
 
 import Agents.DataManagerAgent;
 import Utils.Configuration;
+import Utils.DatasetManager;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
@@ -11,6 +12,7 @@ import jade.util.Logger;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
+import weka.core.Instances;
 
 import java.util.logging.Level;
 
@@ -26,6 +28,7 @@ public class DataManagerBehaviour extends CyclicBehaviour {
 
     private DataManagerAgent dataManagerAgent;
     private DataManagerAgentState dataManagerAgentState;
+    private DatasetManager datasetManager;
     private int numClassifiers;
     private int numTrainedClassifiers = 0;
 
@@ -54,7 +57,9 @@ public class DataManagerBehaviour extends CyclicBehaviour {
         if (message != null) {
             try {
                 Configuration configuration = (Configuration) message.getContentObject();
-                createClassifierAgents(configuration);
+                this.numClassifiers = configuration.getNumClassifiers();
+                this.datasetManager = new DatasetManager(configuration);
+                createClassifierAgents();
                 this.dataManagerAgentState = DataManagerAgentState.WaitingForTrain;
             }
             catch (UnreadableException e) {
@@ -66,24 +71,18 @@ public class DataManagerBehaviour extends CyclicBehaviour {
         }
     }
 
-    private void createClassifierAgents(Configuration configuration) {
-        int numClassifiers = configuration.getNumClassifiers();
-        this.numClassifiers = numClassifiers;
-
-        String trainDatasetPath = configuration.getTrainDatasetPath();
-        int numAttributes = configuration.getNumTrainAttributes();
-
+    private void createClassifierAgents() {
         ContainerController containerController = this.dataManagerAgent.getContainerController();
-
         String packageName = this.dataManagerAgent.getClass().getPackage().getName();
 
-        // DatasetManager datasetManager = new DatasetManager(trainDatasetPath);
-
-        for(int i = 0; i < numClassifiers; ++i) {
+        for(int i = 0; i < this.numClassifiers; ++i) {
             try {
-                Object[] params = {trainDatasetPath, numAttributes};
+                int[] trainAttributes = this.datasetManager.getAttributeIndices();
+                Instances trainInstances = this.datasetManager.getTrainInstances(trainAttributes);
+                Object[] parameters = {trainInstances};
+
                 AgentController agentController = containerController.createNewAgent("classifierAgent_" + (i+1),
-                        packageName + ".ClassifierAgent", params);
+                        packageName + ".ClassifierAgent", parameters);
                 agentController.start();
             }
             catch (StaleProxyException e) {

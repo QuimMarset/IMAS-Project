@@ -21,6 +21,7 @@ public class Configuration implements Serializable {
     private String testDatasetPath;
     private int numTrainAttributes;
     private int numTestAttributes;
+    private int numTrainInstances;
     private String testIndices;
 
     public Configuration(String filePath) {
@@ -33,12 +34,13 @@ public class Configuration implements Serializable {
 
             Element rootElement = document.getDocumentElement();
 
-            this.numClassifiers = Integer.parseInt(rootElement.getElementsByTagName("classifiers").item(0).getTextContent());
-            this.trainDatasetPath = rootElement.getElementsByTagName("train-dataset").item(0).getTextContent();
-            this.testDatasetPath = rootElement.getElementsByTagName("test-dataset").item(0).getTextContent();
-            this.numTrainAttributes = Integer.parseInt(rootElement.getElementsByTagName("train-attributes").item(0).getTextContent());
-            this.numTestAttributes = Integer.parseInt(rootElement.getElementsByTagName("test-attributes").item(0).getTextContent());
-            this.testIndices = rootElement.getElementsByTagName("test-indices").item(0).getTextContent();
+            this.numClassifiers = Integer.parseInt(getAttribute(rootElement, "classifiers"));
+            this.trainDatasetPath = getAttribute(rootElement, "train_dataset");
+            this.testDatasetPath = getAttribute(rootElement, "test_dataset");
+            this.numTrainAttributes = Integer.parseInt(getAttribute(rootElement, "train_attributes"));
+            this.numTestAttributes = Integer.parseInt(getAttribute(rootElement, "test_attributes"));
+            this.numTrainInstances = Integer.parseInt(getAttribute(rootElement, "train_instances"));
+            this.testIndices = getAttribute(rootElement, "test_indices");
         }
         catch (ParserConfigurationException e) {
             e.printStackTrace();
@@ -51,6 +53,10 @@ public class Configuration implements Serializable {
         }
     }
 
+    private String getAttribute(Element rootElement, String attributeName) {
+        return rootElement.getElementsByTagName(attributeName).item(0).getTextContent();
+    }
+
     public int getNumClassifiers() {
         return this.numClassifiers;
     }
@@ -61,6 +67,10 @@ public class Configuration implements Serializable {
 
     public int getNumTestAttributes() {
         return this.numTestAttributes;
+    }
+
+    public int getNumTrainInstances() {
+        return this.numTrainInstances;
     }
 
     public String getTrainDatasetPath() {

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <SystemProperties>
     <classifiers>10</classifiers>
-    <train-dataset>..\datasets\train_audit_risk.arff</train-dataset>
-    <train-attributes>6</train-attributes>
-    <test-dataset>..\datasets\test_audit_risk.arff</test-dataset>
-    <test-indices></test-indices>
-    <test-attributes>20</test-attributes>
+    <train_dataset>./datasets/train_audit_risk.arff</train_dataset>
+    <train_attributes>6</train_attributes>
+    <train_instances>300</train_instances>
+    <test_dataset>./datasets/test_audit_risk.arff</test_dataset>
+    <test_indices></test_indices>
+    <test_attributes>20</test_attributes>
 </SystemProperties>

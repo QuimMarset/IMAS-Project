@@ -1,23 +1,23 @@
 package Agents;
 
 import Behaviours.ClassifierBehaviour;
-import Behaviours.DataManagerBehaviour;
 import jade.core.*;
 import jade.core.behaviours.*;
-import jade.lang.acl.ACLMessage;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.util.Logger;
 import weka.classifiers.trees.J48;
+import weka.core.Instances;
 
 import java.util.logging.Level;
 
 public class ClassifierAgent extends Agent {
-    private final Logger logger = Logger.getMyLogger(getClass().getName());
 
-    J48 decisionTree;
+    private final Logger logger = Logger.getMyLogger(getClass().getName());
+    private J48 decisionTree;
+    private Instances trainInstances;
 
     public ClassifierAgent() {
         this.decisionTree = new J48();
@@ -25,6 +25,12 @@ public class ClassifierAgent extends Agent {
 
     protected void setup() {
         logger.log(Level.INFO, "Classifier " + getAID() + " created!");
+
+        Object[] arguments = this.getArguments();
+        if (arguments != null) {
+            this.trainInstances = (Instances) arguments[0];
+        }
+
         // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
