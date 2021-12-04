@@ -69,7 +69,7 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         String testingIndices = null;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         logger.log(Level.INFO, "Select querying mode:");
-        logger.log(Level.INFO, "1. Randomly auto-elect 15 data rows");
+        logger.log(Level.INFO, "1. Randomly auto-select 15 data rows");
         logger.log(Level.INFO, "2. Manually enter the data rows indices");
         logger.log(Level.INFO, "Choice: ");
         try {
