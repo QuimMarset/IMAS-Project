@@ -2,13 +2,10 @@ package Behaviours;
 
 import Agents.ClassifierAgent;
 import jade.core.AID;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
-import weka.classifiers.Classifier;
-import weka.classifiers.trees.J48;
-import weka.core.Instances;
-import weka.core.converters.CSVLoader;
 
-public class FinalClassifierBehaviour {
+public class FinalClassifierBehaviour extends CyclicBehaviour {
     private ClassifierAgent classifierAgent;
     private boolean send = true;
     

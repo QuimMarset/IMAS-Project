@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<TestQuery>
+    <instances>
+        0, 10, 12, 14, 15
+    </instances>
+    <attributes>
+        TOTAL
+        numbers
+        Risk_C
+        Money_Value
+        Score_MV
+        Risk_D
+        District_Loss
+        PROB
+        RiSk_E
+        History
+    </attributes>
+</TestQuery>

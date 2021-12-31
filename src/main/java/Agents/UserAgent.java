@@ -12,7 +12,6 @@ public class UserAgent extends Agent {
     private final Logger logger = Logger.getMyLogger(getClass().getName());
 
     protected void setup() {
-        // Registration with the DF
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
         sd.setType("UserAgent");

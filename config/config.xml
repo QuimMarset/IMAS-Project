@@ -4,7 +4,6 @@
     <train_dataset>./datasets/train_audit_risk.arff</train_dataset>
     <train_attributes>6</train_attributes>
     <train_instances>300</train_instances>
+    <validation_percentage>25</validation_percentage>
     <test_dataset>./datasets/test_audit_risk.arff</test_dataset>
-    <test_indices></test_indices>
-    <test_attributes>20</test_attributes>
 </SystemProperties>
