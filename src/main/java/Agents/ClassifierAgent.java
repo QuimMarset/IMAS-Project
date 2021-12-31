@@ -8,6 +8,7 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.util.Logger;
+import weka.classifiers.Classifier;
 import weka.classifiers.trees.J48;
 import weka.core.Instances;
 
@@ -46,6 +47,15 @@ public class ClassifierAgent extends Agent {
         catch (FIPAException e) {
             logger.log(Logger.SEVERE, "Agent " + getLocalName() + " - Cannot register with DF", e);
             doDelete();
+        }
+    }
+
+    public void trainModel(Instances trainInstances, Instances validaitonInstances) {
+        Classifier cls = new J48();
+        try {
+            cls.buildClassifier(trainInstances);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
