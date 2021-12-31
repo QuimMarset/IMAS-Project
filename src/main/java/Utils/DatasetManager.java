@@ -9,7 +9,7 @@ import weka.filters.unsupervised.attribute.Remove;
 import javax.management.AttributeNotFoundException;
 import java.util.*;
 
-public class DatasetManager extends InstancesUtils {
+public class DatasetManager {
 
     private final Instances trainData;
     private final Instances testData;
@@ -32,17 +32,45 @@ public class DatasetManager extends InstancesUtils {
         this.attributeInfo = this.createAttributeArrayList(this.trainData);
     }
 
+    private ArrayList<Attribute> createAttributeArrayList(Instances dataset) {
+        ArrayList<Attribute> attributeInfo = new ArrayList<>();
+        for (int i = 0; i < dataset.numAttributes(); ++i) {
+            attributeInfo.add(dataset.attribute(i));
+        }
+        return attributeInfo;
+    }
+
     private Instances readDataset(String datasetPath) {
         Instances data = null;
         try {
             ConverterUtils.DataSource source = new ConverterUtils.DataSource(datasetPath);
             data = source.getDataSet();
-            data.setClassIndex(this.trainData.numAttributes());
+            data.setClassIndex(data.numAttributes()-1);
         }
         catch (Exception e) {
             e.printStackTrace();
         }
         return data;
+    }
+
+    private Instances filterAttributes(Instances instances, int[] attributesToKeep) {
+        // Add the class attribute when filtering
+        int[] attributesToKeepPlusClass = new int[attributesToKeep.length + 1];
+        System.arraycopy(attributesToKeep, 0, attributesToKeepPlusClass, 0, attributesToKeep.length);
+        attributesToKeepPlusClass[attributesToKeepPlusClass.length-1] = instances.classIndex();
+
+        Remove removeFilter = new Remove();
+        removeFilter.setAttributeIndicesArray(attributesToKeepPlusClass);
+        removeFilter.setInvertSelection(true);
+        try {
+            removeFilter.setInputFormat(instances);
+            instances = Filter.useFilter(instances, removeFilter);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return instances;
     }
 
     public ClassifierInstances getClassifierInstances(int numClassifierInstances, int validationPercentage,
@@ -106,10 +134,12 @@ public class DatasetManager extends InstancesUtils {
         if (attributesName.size() > this.numNoClassAttributes) {
             throw new IndexOutOfBoundsException("Trying to use more attributes than the test dataset contains");
         }
-
         int[] attributeIndices = new int[attributesName.size()];
         for (int i = 0; i < attributesName.size(); ++i) {
             attributeIndices[i] = this.getAttributeIndex(attributesName.get(i));
+            if (attributeIndices[i] == this.testData.classIndex()) {
+                throw new IndexOutOfBoundsException("Trying to use the class attribute as independent attribute");
+            }
         }
 
         testInstances.setClassIndex(this.numNoClassAttributes);

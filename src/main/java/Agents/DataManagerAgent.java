@@ -71,8 +71,8 @@ public class DataManagerAgent extends Agent {
         }
     }
 
-    public Instances getClassifierTestInstances(Instances testInstances, int classifier) {
-        return this.classifierAttributes.get(classifier).filterClassifiableInstances(testInstances);
+    public boolean areTestInstancesPredictable(Instances testInstances, int classifier) {
+        return this.classifierAttributes.get(classifier).areInstancesClassifiable(testInstances);
     }
 
     protected void setup() {
