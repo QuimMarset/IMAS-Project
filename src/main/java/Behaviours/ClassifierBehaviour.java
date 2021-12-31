@@ -51,4 +51,6 @@ public class ClassifierBehaviour extends CyclicBehaviour {
         Classifier cls = new J48();
         cls.buildClassifier(this.train);
     }
+
+
 }
