@@ -55,7 +55,7 @@ public class UserAgentBehaviour extends CyclicBehaviour {
             performTestQueries();
         }
         else if (this.userAgentState == UserAgentState.WaitForQueriesAcceptance) {
-            waitForQueriesAgree();
+            waitForQueriesRequestResponse();
         }
         else {
             // Wait for test queries results
@@ -86,7 +86,7 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         if (message != null) {
             int messagePerformative = message.getPerformative();
             if (messagePerformative == ACLMessage.AGREE) {
-                this.logger.log(Level.INFO, "The classifiers have been created correctly. Waiting for them to train");
+                this.logger.log(Level.INFO, "The classifiers have been created correctly");
             }
             else if (messagePerformative == ACLMessage.REFUSE) {
                 // A refuse has been sent back because the training cannot be done with those system settings
@@ -120,15 +120,21 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         }
     }
 
-    private void waitForQueriesAgree() {
+    private void waitForQueriesRequestResponse() {
         MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("dataManagerAgent", AID.ISLOCALNAME));
-        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.AGREE);
-        ACLMessage message = this.userAgent.receive(MessageTemplate.and(senderFilter, performativeFilter));
+        ACLMessage message = this.userAgent.receive(senderFilter);
 
         if (message != null) {
-            System.out.println(message.getContent());
-            System.out.println("Now wait for the result to come");
-            this.userAgentState = UserAgentState.WaitForQueriesResults;
+            if (message.getPerformative() == ACLMessage.AGREE) {
+                System.out.println(message.getContent());
+                System.out.println("Now wait for the results to come");
+                this.userAgentState = UserAgentState.WaitForQueriesResults;
+            }
+            else if (message.getPerformative() == ACLMessage.REFUSE) {
+                this.userAgentState = UserAgentState.PerformTestQueries;
+                System.out.println(message.getContent());
+            }
+
         }
         else {
             this.block();

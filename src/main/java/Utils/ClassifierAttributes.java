@@ -1,57 +1,73 @@
 package Utils;
 
 import weka.core.Attribute;
-import weka.core.Instance;
 import weka.core.Instances;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.Remove;
+
 import java.util.ArrayList;
+import java.util.List;
 
-public class ClassifierAttributes extends InstancesUtils {
+public class ClassifierAttributes {
 
-    ArrayList<Attribute> attributes;
+    List<Attribute> attributes;
 
     public ClassifierAttributes(Instances instances) {
-        this.attributes = this.createAttributeArrayList(instances);
+        this.generateAttributeList(instances);
     }
 
-    private boolean containsAttribute(Attribute attribute) {
-        for (Attribute attributeClassifier : this.attributes) {
-            if (attribute.name().equals(attributeClassifier.name())) {
+    private void generateAttributeList(Instances instances) {
+        this.attributes = new ArrayList<>();
+        for (int i = 0; i < instances.numAttributes(); ++i) {
+            this.attributes.add(instances.attribute(i));
+        }
+    }
+
+    private boolean containsAttribute(Attribute attribute, Instances instances) {
+        for (int i = 0; i < instances.numAttributes(); ++i) {
+            if (attribute.name().equals(instances.attribute(i).name())) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean isClassifiable(Instance instance) {
-        for (int i = 0; i < instance.numAttributes(); ++i) {
-            if (!containsAttribute(instance.attribute(i))) {
+    public boolean areInstancesClassifiable(Instances instances) {
+        for (Attribute attribute : this.attributes) {
+            if (!this.containsAttribute(attribute, instances)) {
                 return false;
             }
         }
         return true;
     }
 
-    private int[] getClassifierAttributeIndices(Instances instances) {
-        int[] attributeIndices = new int[this.attributes.size()];
-        int i = 0;
-        for (int j = 0; j < instances.numAttributes(); ++j) {
-            if (this.attributes.contains(instances.attribute(j))) {
-                attributeIndices[i] = j;
-                ++i;
+    private int[] getAttributesToKeep(Instances instances) {
+        int[] attributeIndices = new int[attributes.size()];
+        for (int i = 0; i < attributes.size(); ++i) {
+            for (int j = 0; j < instances.numAttributes(); ++j) {
+                if (attributes.get(i).name().equals(instances.attribute(j).name())) {
+                    attributeIndices[i] = j;
+                    break;
+                }
             }
         }
         return attributeIndices;
     }
 
     public Instances filterClassifiableInstances(Instances instances) {
-        for (int i = 0; i < instances.numInstances(); ++i) {
-            if (!this.isClassifiable(instances.get(i))) {
-                instances.remove(i);
-            }
+        int[] attributeIndices = this.getAttributesToKeep(instances);
+
+        Remove removeFilter = new Remove();
+        removeFilter.setAttributeIndicesArray(attributeIndices);
+        removeFilter.setInvertSelection(true);
+        try {
+            removeFilter.setInputFormat(instances);
+            instances = Filter.useFilter(instances, removeFilter);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
         }
 
-        int[] attributeIndices = this.getClassifierAttributeIndices(instances);
-        return this.filterAttributes(instances, attributeIndices);
+        return instances;
     }
-
 }

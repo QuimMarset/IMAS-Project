@@ -82,7 +82,7 @@ public class XMLParser {
         for (int i = 1; i < elements.length - 1; ++i) {
             String trimmedElement = elements[i].trim();
             try {
-                intElements[i] = Integer.parseInt(trimmedElement);
+                intElements[i-1] = Integer.parseInt(trimmedElement);
             }
             catch (NumberFormatException e) {
                 throw new NumberFormatException("Attribute " + attributeName + " contains a invalid number: "

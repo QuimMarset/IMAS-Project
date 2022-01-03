@@ -62,13 +62,27 @@ public class DataManagerAgent extends Agent {
     }
 
     public Instances getTestInstances(TestQuery testQuery) throws IndexOutOfBoundsException, AttributeNotFoundException {
+        int[] instanceIndices;
+        List<String> attributeNames;
+
         if (testQuery.isRandom()) {
-            // Generate a random test query containing 15 instances, and each instance will contain 20 attributes
-            return this.datasetManager.getTestInstancesRandom(15, 20);
+            /* Generate a random test query containing 15 instances, and each instance will contain 20 attributes
+               This process seem redundant, but it is for the sake of filling the test query that will be later returned
+               to the User Agent */
+            instanceIndices = this.datasetManager.getRandomTestInstances(15);
+            attributeNames = this.datasetManager.getRandomAttributes(20);
+            testQuery.setInstanceIndices(instanceIndices);
+            testQuery.setAttributeNames(attributeNames);
         }
         else {
-            return this.datasetManager.getTestInstances(testQuery.getInstancesIndices(), testQuery.getAttributesName());
+            instanceIndices = testQuery.getInstanceIndices();
+            attributeNames = testQuery.getAttributeNames();
         }
+        return this.datasetManager.getTestInstances(instanceIndices, attributeNames);
+    }
+
+    public boolean areTestInstancesPredictable(Instances testInstances, int classifier) {
+        return this.classifierAttributes.get(classifier).areInstancesClassifiable(testInstances);
     }
 
     public Instances getClassifierTestInstances(Instances testInstances, int classifier) {
@@ -109,5 +123,4 @@ public class DataManagerAgent extends Agent {
                     "bigger than 100");
         }
     }
-
 }

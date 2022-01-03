@@ -136,23 +136,24 @@ public class DataManagerBehaviour extends CyclicBehaviour {
         }
     }
 
-    private void sendTestInstancesToClassifiers(TestQuery testQuery)
+    private boolean sendTestInstancesToClassifiers(TestQuery testQuery)
             throws IndexOutOfBoundsException, AttributeNotFoundException {
 
         this.numAskedClassifiers = 0;
         Instances testInstances = this.dataManagerAgent.getTestInstances(testQuery);
 
         for (int i = 0; i < this.numClassifiers; ++i) {
-            Instances classifiableInstances = this.dataManagerAgent.getClassifierTestInstances(testInstances, i);
 
-            if (classifiableInstances.numInstances() > 0) {
+            if (this.dataManagerAgent.areTestInstancesPredictable(testInstances, i)) {
                 this.numAskedClassifiers++;
                 ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
                 message.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
                 message.addReceiver(new AID("classifierAgent_" + (i+1), AID.ISLOCALNAME));
 
+                Instances classifierTestInstances = this.dataManagerAgent.getClassifierTestInstances(testInstances, i);
+
                 try {
-                    message.setContentObject(classifiableInstances);
+                    message.setContentObject(classifierTestInstances);
                     this.dataManagerAgent.send(message);
                 }
                 catch (IOException e) {
@@ -160,6 +161,8 @@ public class DataManagerBehaviour extends CyclicBehaviour {
                 }
             }
         }
+
+        return this.numAskedClassifiers != 0;
     }
 
     private void waitForTestQueriesToClassify() {
@@ -172,16 +175,20 @@ public class DataManagerBehaviour extends CyclicBehaviour {
             try {
                 TestQuery testQuery = (TestQuery) message.getContentObject();
 
-                this.sendTestInstancesToClassifiers(testQuery);
+                boolean haveBeenSent = this.sendTestInstancesToClassifiers(testQuery);
 
-                reply.setPerformative(ACLMessage.AGREE);
-                if (testQuery.isRandom()) {
-                    reply.setContent("The random test queries will be processed\n Instances: " +
-                            testQuery.getInstancesIndices().toString() + "Attributes: " +
-                            testQuery.getAttributesName().toString());
+                if (haveBeenSent) {
+                    reply.setPerformative(ACLMessage.AGREE);
+                    if (testQuery.isRandom()) {
+                        reply.setContent("Random generated query:\n" + testQuery);
+                    }
+                    else {
+                        reply.setContent("The test queries will be processed");
+                    }
                 }
                 else {
-                    reply.setContent("The test queries will be processed");
+                    reply.setPerformative(ACLMessage.REFUSE);
+                    reply.setContent("No classifier was able to classify the passed instances");
                 }
             }
             catch (UnreadableException e) {
@@ -211,12 +218,7 @@ public class DataManagerBehaviour extends CyclicBehaviour {
             ++this.numClassifiersFinished;
 
             if (this.numAskedClassifiers == this.numClassifiersFinished) {
-
-                ACLMessage reply = this.messagePendingToReply.createReply();
-                reply.setPerformative(ACLMessage.INFORM);
-                reply.setContent("All possible classifiers have classified the test instances. Wait for the result");
-                this.dataManagerAgent.send(reply);
-
+                // All the classifiers have finished the prediction
                 this.dataManagerAgentState = DataManagerAgentState.WaitingForQueries;
             }
         }

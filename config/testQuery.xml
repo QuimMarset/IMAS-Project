@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <TestQuery>
     <instances>
-        0, 10, 12, 14, 15
+        0
+        10
+        12
+        14
+        15
     </instances>
     <attributes>
         TOTAL
