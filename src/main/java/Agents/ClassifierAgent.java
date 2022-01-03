@@ -63,9 +63,15 @@ public class ClassifierAgent extends Agent {
         } catch (Exception e) {
             e.printStackTrace();
         }*/
+        double testError = 0.00;
+        double perCorrect = 0.00;
 
-        Evaluation eval = new Evaluation(trainInstances);
         J48 tree = new J48();
+        tree.buildClassifier(trainInstances);
+        Evaluation eval = new Evaluation(trainInstances);
+        eval.evaluateModel(tree, validaitonInstances);
+
+
         StringBuffer forPredictionsPrinting = new StringBuffer();
         PlainText classifierOutput = new PlainText();
         classifierOutput.setBuffer(forPredictionsPrinting);
@@ -73,11 +79,20 @@ public class ClassifierAgent extends Agent {
         Boolean outputDistribution = new Boolean(true);
         classifierOutput.setOutputDistribution(true);
         eval.crossValidateModel(tree, trainInstances, 10, new Random(1), classifierOutput, attsToOutput, outputDistribution);
+
+        //Possible accuracy variables
+        testError = eval.errorRate();
+        perCorrect = eval.pctCorrect();
+
         System.out.println("===== J48 classifier =====");
         System.out.println("Number of correct classified " + eval.correct());
         System.out.println("Percentage of correct classified " + eval.pctCorrect());
+
+        System.out.println("TestError:" + eval.errorRate());
         System.out.println(eval.toClassDetailsString());
         System.out.println(eval.toMatrixString());
         System.out.println(eval.toSummaryString());
+        //System.out.println(tree.toSummaryString());
+        //System.out.println(tree.graph());
     }
 }
