@@ -103,15 +103,17 @@ public class DatasetManager {
         return new ClassifierInstances(trainInstances, valInstances);
     }
 
-    public Instances getTestInstancesRandom(int numTestInstances, int numTestAttributes) {
-        int[] attributeIndices = this.randomizer.getRandomIndices(this.numNoClassAttributes, numTestAttributes);
-        int[] instancesIndices = this.randomizer.getRandomIndices(this.numTestInstances, numTestInstances);
-        Instances testInstances = new Instances("queryTestInstances", this.attributeInfo, instancesIndices.length);
-        for (int instancesIndex : instancesIndices) {
-            testInstances.add(this.testData.get(instancesIndex));
+    public int[] getRandomTestInstances(int numInstances) {
+        return this.randomizer.getRandomIndices(this.numTestInstances, numInstances);
+    }
+
+    public List<String> getRandomAttributes(int numAttributes) {
+        int[] attributeIndices = this.randomizer.getRandomIndices(this.numNoClassAttributes, numAttributes);
+        List<String> attributeNames = new ArrayList<>();
+        for (int index : attributeIndices) {
+            attributeNames.add(this.testData.attribute(index).name());
         }
-        testInstances.setClassIndex(this.numNoClassAttributes);
-        return this.filterAttributes(testInstances, attributeIndices);
+        return attributeNames;
     }
 
     public Instances getTestInstances(int[] instanceIndices, List<String> attributesName)

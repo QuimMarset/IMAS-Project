@@ -150,8 +150,10 @@ public class DataManagerBehaviour extends CyclicBehaviour {
                 message.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
                 message.addReceiver(new AID("classifierAgent_" + (i+1), AID.ISLOCALNAME));
 
+                Instances classifierTestInstances = this.dataManagerAgent.getClassifierTestInstances(testInstances, i);
+
                 try {
-                    message.setContentObject(testInstances);
+                    message.setContentObject(classifierTestInstances);
                     this.dataManagerAgent.send(message);
                 }
                 catch (IOException e) {
@@ -160,10 +162,7 @@ public class DataManagerBehaviour extends CyclicBehaviour {
             }
         }
 
-        if (this.numAskedClassifiers == 0) {
-            return false;
-        }
-        return true;
+        return this.numAskedClassifiers != 0;
     }
 
     private void waitForTestQueriesToClassify() {
@@ -181,10 +180,7 @@ public class DataManagerBehaviour extends CyclicBehaviour {
                 if (haveBeenSent) {
                     reply.setPerformative(ACLMessage.AGREE);
                     if (testQuery.isRandom()) {
-                        reply.setContent("");
-                        /*reply.setContent("The random test queries will be processed\n Instances: " +
-                                testQuery.getInstancesIndices().toString() + "Attributes: " +
-                                testQuery.getAttributesName().toString());*/
+                        reply.setContent("Random generated query:\n" + testQuery);
                     }
                     else {
                         reply.setContent("The test queries will be processed");
@@ -222,12 +218,7 @@ public class DataManagerBehaviour extends CyclicBehaviour {
             ++this.numClassifiersFinished;
 
             if (this.numAskedClassifiers == this.numClassifiersFinished) {
-
-                ACLMessage reply = this.messagePendingToReply.createReply();
-                reply.setPerformative(ACLMessage.INFORM);
-                reply.setContent("All possible classifiers have classified the test instances. Wait for the results");
-                this.dataManagerAgent.send(reply);
-
+                // All the classifiers have finished the prediction
                 this.dataManagerAgentState = DataManagerAgentState.WaitingForQueries;
             }
         }

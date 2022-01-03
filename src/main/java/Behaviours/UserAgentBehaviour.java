@@ -127,7 +127,7 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         if (message != null) {
             if (message.getPerformative() == ACLMessage.AGREE) {
                 System.out.println(message.getContent());
-                System.out.println("Now wait for the result to come");
+                System.out.println("Now wait for the results to come");
                 this.userAgentState = UserAgentState.WaitForQueriesResults;
             }
             else if (message.getPerformative() == ACLMessage.REFUSE) {
