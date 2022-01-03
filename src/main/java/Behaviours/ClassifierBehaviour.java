@@ -13,9 +13,8 @@ import weka.core.Instances;
 import weka.classifiers.Evaluation;
 import weka.classifiers.trees.J48;
 
-//import javax.sql.DataSource;
-import weka.core.converters.ConverterUtils.DataSource;
-import weka.core.converters.CSVLoader;
+
+
 
 
 public class ClassifierBehaviour extends CyclicBehaviour {
@@ -59,6 +58,8 @@ public class ClassifierBehaviour extends CyclicBehaviour {
             catch (UnreadableException e) {
                 reply.setPerformative(ACLMessage.REFUSE);
                 reply.setContent("The train and validation instances cannot be retrieved");
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             this.classifierAgent.send(reply);
