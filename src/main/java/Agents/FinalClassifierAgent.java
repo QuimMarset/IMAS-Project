@@ -1,16 +1,19 @@
 package Agents;
 
 import Behaviours.ClassifierBehaviour;
+import Behaviours.FinalClassifierBehaviour;
 import jade.core.*;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.util.Logger;
+import weka.core.Instances;
 
-public class FinalClassifierAgent extends Agent{
+public class FinalClassifierAgent extends Agent {
 
     private final Logger logger = Logger.getMyLogger(getClass().getName());
+    private Instances trainInstances;
 
     protected void setup() {
         // Registration with the DF
@@ -23,10 +26,14 @@ public class FinalClassifierAgent extends Agent{
 
         try {
             DFService.register(this, dfd);
+            this.addBehaviour(new FinalClassifierBehaviour(this));
         }
         catch (FIPAException e) {
             logger.log(Logger.SEVERE, "Agent " + getLocalName() + " - Cannot register with DF", e);
             doDelete();
         }
+    }
+
+    public void predictInstances(Instances instances) throws Exception {
     }
 }

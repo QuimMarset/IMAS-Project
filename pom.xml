@@ -66,6 +66,13 @@
                                     dataManagerAgent:Agents.DataManagerAgent;
                                     finalClassifierAgent:Agents.FinalClassifierAgent
                                 </argument>
+                                <argument>
+                                    -port
+                                </argument>
+
+                                <argument>
+                                    12344
+                                </argument>
                             </arguments>
                         </configuration>
                     </plugin>

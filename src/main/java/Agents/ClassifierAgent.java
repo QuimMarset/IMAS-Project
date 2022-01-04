@@ -22,6 +22,8 @@ public class ClassifierAgent extends Agent {
     private final Logger logger = Logger.getMyLogger(getClass().getName());
     private J48 decisionTree;
     private Instances trainInstances;
+    private double testError;
+    private double perCorrect;
 
     public ClassifierAgent() {
         this.decisionTree = new J48();
@@ -53,6 +55,14 @@ public class ClassifierAgent extends Agent {
         }
     }
 
+    public double getErrorRate() {
+        return testError;
+    }
+
+    public J48 getModel() {
+        return decisionTree;
+    }
+
     public void trainModel(Instances trainInstances, Instances validaitonInstances) throws Exception {
         /*Classifier cls = new J48();
         Evaluation evaluation = new Evaluation(trainInstances);
@@ -63,13 +73,13 @@ public class ClassifierAgent extends Agent {
         } catch (Exception e) {
             e.printStackTrace();
         }*/
-        double testError = 0.00;
-        double perCorrect = 0.00;
+        testError = 0.00;
+        perCorrect = 0.00;
 
-        J48 tree = new J48();
-        tree.buildClassifier(trainInstances);
+        decisionTree = new J48();
+        decisionTree.buildClassifier(trainInstances);
         Evaluation eval = new Evaluation(trainInstances);
-        eval.evaluateModel(tree, validaitonInstances);
+        eval.evaluateModel(decisionTree, validaitonInstances);
 
 
         StringBuffer forPredictionsPrinting = new StringBuffer();
@@ -78,7 +88,7 @@ public class ClassifierAgent extends Agent {
         weka.core.Range attsToOutput = null;
         Boolean outputDistribution = new Boolean(true);
         classifierOutput.setOutputDistribution(true);
-        eval.crossValidateModel(tree, trainInstances, 10, new Random(1), classifierOutput, attsToOutput, outputDistribution);
+        eval.crossValidateModel(decisionTree, trainInstances, 10, new Random(1), classifierOutput, attsToOutput, outputDistribution);
 
         //Possible accuracy variables
         testError = eval.errorRate();

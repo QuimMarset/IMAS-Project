@@ -7,8 +7,9 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="JadeExample" />
+        <module name="MAS" />
         <module name="IMAS-Project" />
+        <module name="JadeExample" />
       </profile>
     </annotationProcessing>
   </component>

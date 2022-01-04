@@ -13,8 +13,7 @@ import weka.core.Instances;
 import weka.classifiers.Evaluation;
 import weka.classifiers.trees.J48;
 
-
-
+import java.io.IOException;
 
 
 public class ClassifierBehaviour extends CyclicBehaviour {
@@ -39,6 +38,15 @@ public class ClassifierBehaviour extends CyclicBehaviour {
         }
     }
 
+    private void sendResults() throws IOException {
+        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+        message.addReceiver(new AID("finalClassifierAgent", AID.ISLOCALNAME));
+        message.setContent(String.valueOf(this.classifierAgent.getErrorRate()));
+        message.setContentObject(this.classifierAgent.getModel());
+        this.classifierAgent.send(message);
+        this.send = false;
+    }
+
     private void receiveTrainValInstances() {
         MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
         MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("dataManagerAgent", AID.ISLOCALNAME));
@@ -54,6 +62,7 @@ public class ClassifierBehaviour extends CyclicBehaviour {
 
                 reply.setContent("Classifier " + this.classifierAgent.getLocalName() + " has finished training");
                 reply.setPerformative(ACLMessage.INFORM);
+                sendResults();
             }
             catch (UnreadableException e) {
                 reply.setPerformative(ACLMessage.REFUSE);
