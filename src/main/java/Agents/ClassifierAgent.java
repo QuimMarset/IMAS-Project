@@ -94,7 +94,7 @@ public class ClassifierAgent extends Agent {
         testError = eval.errorRate();
         perCorrect = eval.pctCorrect();
 
-        System.out.println("===== J48 classifier =====");
+        System.out.println("===== J48 classifier ===== " + getLocalName());
         System.out.println("Number of correct classified " + eval.correct());
         System.out.println("Percentage of correct classified " + eval.pctCorrect());
 

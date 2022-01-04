@@ -57,6 +57,14 @@ public class DataManagerBehaviour extends CyclicBehaviour {
         }
     }
 
+    private void sendNumberOfClassifiers() {
+        System.out.println("Data manager : sending number of classifiers to Final Classifier");
+        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+        message.addReceiver(new AID("finalClassifierAgent", AID.ISLOCALNAME));
+        message.setContent(String.valueOf(this.numClassifiers));
+        this.dataManagerAgent.send(message);
+    }
+
     private void waitForSystemConfiguration() {
         MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
         MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("userAgent", AID.ISLOCALNAME));
@@ -112,6 +120,7 @@ public class DataManagerBehaviour extends CyclicBehaviour {
                 e.printStackTrace();
             }
         }
+        sendNumberOfClassifiers();
     }
 
     private void waitForClassifiersToTrain() {

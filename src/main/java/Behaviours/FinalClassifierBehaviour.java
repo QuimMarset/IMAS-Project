@@ -1,5 +1,6 @@
 package Behaviours;
 
+import Agents.ClassifierAgent;
 import Agents.FinalClassifierAgent;
 import Utils.AuditDataRowWithPrediction;
 import Utils.ClassifierInstances;
@@ -8,12 +9,16 @@ import Utils.DatasetManager;
 import jade.core.AID;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import weka.classifiers.Classifier;
 import weka.core.Instances;
+import weka.classifiers.trees.J48;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 import static Utils.PredictionEvaluatorUtils.evaluateAndPrintPredictionResults;
@@ -22,7 +27,7 @@ import static Utils.PredictionEvaluatorUtils.evaluateAndPrintPredictionResults;
 public class FinalClassifierBehaviour extends CyclicBehaviour {
     private FinalClassifierAgent finalclassifierAgent;
     private boolean send = true;
-    private int numClassifiers;
+    private int numClassifiers = 0;
     private int numResultsReceived = 0;
 
     public FinalClassifierBehaviour(FinalClassifierAgent classifierAgent) {
@@ -33,7 +38,6 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
     public void action() {
         if (this.send) {
             receiveNumberOfClassifiers();
-            //TODO someone
         }
     }
 
@@ -52,15 +56,15 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
         this.finalclassifierAgent.send(message);
         this.send = false;
         */
-
-        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
+        System.out.println("Final classifier : receiveNumberOfClassifiers()");
+        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
         MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("dataManagerAgent", AID.ISLOCALNAME));
-
         ACLMessage message = this.finalclassifierAgent.receive(MessageTemplate.and(performativeFilter, senderFilter));
-
+        System.out.println(message);
         if (message != null) {
             try {
-                numClassifiers = (int) message.getContentObject();
+                numClassifiers = Integer.parseInt(message.getContent());
+                System.out.println("Final Classifier : received number of classifiers from Data Manager : " + numClassifiers);
                 waitForResultsFromClassifierAgents();
             }
             catch (Exception e) {
@@ -74,12 +78,41 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
 
 
     private void waitForResultsFromClassifierAgents() {
+        double bestError = 1000;
+        J48 bestClassifier = null;
+        String bestClassifierName = "";
         while(numResultsReceived < numClassifiers) {
-            MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
-            ACLMessage message = this.finalclassifierAgent.receive(performativeFilter);
+            MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+            MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("classifierAgent_4", AID.ISLOCALNAME));
+            ACLMessage message = this.finalclassifierAgent.receive(MessageTemplate.and(performativeFilter, senderFilter));
+            System.out.println("Final classifier - Classifier sender : " + message.getSender());
+            System.out.println(message);
             if (message != null && message.getSender().getLocalName().equals("classifierAgent")) {
+                System.out.println("Final Classifier : ...Received message from Classifier Agent");
                 try {
-                    float error = (float) message.getContentObject();
+                    Map<String, Object> content = (HashMap<String, Object>) message.getContentObject();
+                    double error = (double) content.get("error");
+                    J48 model = (J48) content.get("model");
+                    if(error < bestError) {
+                        bestError = error;
+                        bestClassifier = model;
+                        bestClassifierName = message.getSender().getName();
+                    }
+
+                    /*
+                    double error = Double.parseDouble(message.getContent());
+                    System.out.println("Classifier Error rate : " + error);
+
+                    if(error < bestError) {
+                        bestError = error;
+                        bestClassifier = message.getSender().getName();
+                        DFAgentDescription dfd = new DFAgentDescription();
+
+                    }
+*/
+                    //J48 model = (J48) message.getContentObject();
+                    //System.out.println("Classifier Model : ");
+                    //System.out.println(model);
                     /*
                     Configuration configuration = (Configuration) message.getContentObject();
                     this.numClassifiers = configuration.getNumClassifiers();
@@ -95,6 +128,8 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
                 this.block();
             }
         }
+
+        System.out.println("Best Classifier : "+ bestClassifierName + "\n Error: " + bestError + "\n Model: " + bestClassifier + "\n");
     }
     /*
     private void waitForPetitionResults() {

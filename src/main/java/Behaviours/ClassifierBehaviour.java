@@ -14,6 +14,8 @@ import weka.classifiers.Evaluation;
 import weka.classifiers.trees.J48;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
 
 
 public class ClassifierBehaviour extends CyclicBehaviour {
@@ -39,12 +41,17 @@ public class ClassifierBehaviour extends CyclicBehaviour {
     }
 
     private void sendResults() throws IOException {
+        System.out.println(getAgent().getLocalName() + ": ...Sending results to Final Classifier");
         ACLMessage message = new ACLMessage(ACLMessage.INFORM);
         message.addReceiver(new AID("finalClassifierAgent", AID.ISLOCALNAME));
+        /*
+        Map<String, Object> content = new HashMap<String, Object>();
+        content.put("error", this.classifierAgent.getErrorRate());
+        content.put("model", this.classifierAgent.getModel());
+        message.setContentObject((Serializable) content);
+        */
         message.setContent(String.valueOf(this.classifierAgent.getErrorRate()));
-        message.setContentObject(this.classifierAgent.getModel());
         this.classifierAgent.send(message);
-        this.send = false;
     }
 
     private void receiveTrainValInstances() {
@@ -60,9 +67,9 @@ public class ClassifierBehaviour extends CyclicBehaviour {
                 this.classifierAgent.trainModel(instances.getTrainInstances(),
                         instances.getValidaitonInstances());
 
+                sendResults();
                 reply.setContent("Classifier " + this.classifierAgent.getLocalName() + " has finished training");
                 reply.setPerformative(ACLMessage.INFORM);
-                sendResults();
             }
             catch (UnreadableException e) {
                 reply.setPerformative(ACLMessage.REFUSE);
