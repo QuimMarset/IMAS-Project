@@ -90,14 +90,24 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
             if (message != null && message.getSender().getLocalName().equals("classifierAgent")) {
                 System.out.println("Final Classifier : ...Received message from Classifier Agent");
                 try {
-                    Map<String, Object> content = (HashMap<String, Object>) message.getContentObject();
-                    double error = (double) content.get("error");
-                    J48 model = (J48) content.get("model");
-                    if(error < bestError) {
-                        bestError = error;
-                        bestClassifier = model;
-                        bestClassifierName = message.getSender().getName();
+                    Map<Double, J48> content = (HashMap<Double, J48>) message.getContentObject();
+
+                    Object[][] array = new String[content.size()][2];
+                    int count = 0;
+                    for(Map.Entry<Double, J48> entry : content.entrySet()){
+                        array[count][0] = entry.getKey();
+                        array[count][1] = entry.getValue();
+                        double error = entry.getKey();
+                        J48 model = entry.getValue();
+                        if(error < bestError) {
+                            bestError = error;
+                            bestClassifier = model;
+                            bestClassifierName = message.getSender().getName();
+                        }
+                        count++;
                     }
+
+
 
                     /*
                     double error = Double.parseDouble(message.getContent());

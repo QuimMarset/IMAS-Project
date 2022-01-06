@@ -2,15 +2,11 @@ package Behaviours;
 
 import Agents.ClassifierAgent;
 import Utils.ClassifierInstances;
-import Utils.Configuration;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
-import weka.classifiers.Classifier;
-import weka.core.Instances;
-import weka.classifiers.Evaluation;
 import weka.classifiers.trees.J48;
 
 import java.io.IOException;
@@ -44,12 +40,12 @@ public class ClassifierBehaviour extends CyclicBehaviour {
         System.out.println(getAgent().getLocalName() + ": ...Sending results to Final Classifier");
         ACLMessage message = new ACLMessage(ACLMessage.INFORM);
         message.addReceiver(new AID("finalClassifierAgent", AID.ISLOCALNAME));
-        /*
-        Map<String, Object> content = new HashMap<String, Object>();
-        content.put("error", this.classifierAgent.getErrorRate());
-        content.put("model", this.classifierAgent.getModel());
+
+        HashMap<Double, J48> content = new HashMap<Double, J48>();
+        content.put(this.classifierAgent.getErrorRate(), this.classifierAgent.getModel());
+
         message.setContentObject((Serializable) content);
-        */
+
         message.setContent(String.valueOf(this.classifierAgent.getErrorRate()));
         this.classifierAgent.send(message);
     }

@@ -2,13 +2,11 @@ package Agents;
 
 import Behaviours.ClassifierBehaviour;
 import jade.core.*;
-import jade.core.behaviours.*;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.util.Logger;
-import weka.classifiers.Classifier;
 import weka.classifiers.evaluation.output.prediction.PlainText;
 import weka.classifiers.trees.J48;
 import weka.classifiers.Evaluation;
@@ -56,6 +54,7 @@ public class ClassifierAgent extends Agent {
     }
 
     public double getErrorRate() {
+
         return testError;
     }
 
@@ -63,16 +62,10 @@ public class ClassifierAgent extends Agent {
         return decisionTree;
     }
 
+
+
     public void trainModel(Instances trainInstances, Instances validaitonInstances) throws Exception {
-        /*Classifier cls = new J48();
-        Evaluation evaluation = new Evaluation(trainInstances);
-        try {
-            cls.buildClassifier(trainInstances);
-            evaluation.evaluateModel(cls, validaitonInstances);
-            System.out.println(evaluation.toClassDetailsString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
+
         testError = 0.00;
         perCorrect = 0.00;
 
@@ -102,7 +95,7 @@ public class ClassifierAgent extends Agent {
         System.out.println(eval.toClassDetailsString());
         System.out.println(eval.toMatrixString());
         System.out.println(eval.toSummaryString());
-        //System.out.println(tree.toSummaryString());
-        //System.out.println(tree.graph());
+
+
     }
 }
