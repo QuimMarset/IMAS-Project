@@ -1,6 +1,7 @@
 package Behaviours;
 
 import Agents.DataManagerAgent;
+import Behaviours.Enums.DataManagerAgentState;
 import Utils.ClassifierInstances;
 import Utils.Configuration;
 import Utils.TestQuery;
@@ -14,13 +15,6 @@ import weka.core.Instances;
 
 import javax.management.AttributeNotFoundException;
 import java.io.IOException;
-
-
-enum DataManagerAgentState {
-    Idle,
-    WaitingForTrain,
-    WaitingForQueries,
-}
 
 public class DataManagerBehaviour extends CyclicBehaviour {
 

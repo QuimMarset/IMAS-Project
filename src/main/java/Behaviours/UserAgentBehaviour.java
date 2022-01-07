@@ -1,7 +1,7 @@
 package Behaviours;
 
 import Agents.UserAgent;
-import Utils.AuditDataRowWithPrediction;
+import Behaviours.Enums.UserAgentState;
 import Utils.Configuration;
 import Utils.TestQuery;
 import Utils.UserInteractionUtils;
@@ -13,22 +13,8 @@ import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.util.Logger;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
-
-import static Utils.PredictionEvaluatorUtils.evaluateAndPrintPredictionResults;
-
-enum UserAgentState {
-    InitSystem,
-    WaitForTraining,
-    PerformTestQueries,
-    WaitForQueriesAcceptance,
-    WaitForQueriesResults
-}
 
 public class UserAgentBehaviour extends CyclicBehaviour {
 
@@ -57,9 +43,12 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         else if (this.userAgentState == UserAgentState.WaitForQueriesAcceptance) {
             waitForQueriesRequestResponse();
         }
-        else {
-            // Wait for test queries results
+        else if (this.userAgentState == UserAgentState.WaitForQueriesResults) {
             waitForQueriesResults();
+        }
+        else {
+            //Idle and waiting for user to prompt either to repeat config+training or testing
+            promptUserForNextRoundOfAction();
         }
     }
 
@@ -150,7 +139,7 @@ public class UserAgentBehaviour extends CyclicBehaviour {
             try {
                 message.getContentObject();
                 //evaluateAndPrintPredictionResults(petitionResults);
-                this.userAgentState = UserAgentState.PerformTestQueries;
+                this.userAgentState = UserAgentState.IdleOrRepeatTraining;
             }
             catch (UnreadableException e) {
                 e.printStackTrace();
@@ -159,5 +148,9 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         else {
             this.block();
         }
+    }
+
+    private void promptUserForNextRoundOfAction() {
+        this.userAgentState = UserInteractionUtils.promptUserForNextRoundOfAction();
     }
 }
