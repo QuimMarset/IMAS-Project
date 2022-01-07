@@ -36,15 +36,10 @@ public class ClassifierBehaviour extends CyclicBehaviour {
         }
     }
 
-    private void sendResults() throws IOException {
+    private void sendResults() {
         System.out.println(getAgent().getLocalName() + ": ...Sending results to Final Classifier");
         ACLMessage message = new ACLMessage(ACLMessage.INFORM);
         message.addReceiver(new AID("finalClassifierAgent", AID.ISLOCALNAME));
-
-        HashMap<Double, J48> content = new HashMap<Double, J48>();
-        content.put(this.classifierAgent.getErrorRate(), this.classifierAgent.getModel());
-
-        message.setContentObject((Serializable) content);
 
         message.setContent(String.valueOf(this.classifierAgent.getErrorRate()));
         this.classifierAgent.send(message);
