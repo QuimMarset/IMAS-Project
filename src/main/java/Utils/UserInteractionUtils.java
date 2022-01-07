@@ -1,5 +1,7 @@
 package Utils;
 
+import Behaviours.Enums.UserAgentState;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.io.BufferedReader;
@@ -56,7 +58,7 @@ public final class UserInteractionUtils {
                     testQuery = new TestQuery();
                 }
                 else {
-                    System.out.println("Wrong option. Introduce it again");
+                    System.out.println("Wrong option. Try again!");
                 }
             }
         }
@@ -117,5 +119,33 @@ public final class UserInteractionUtils {
         }
 
         return filePath;
+    }
+
+    public static UserAgentState promptUserForNextRoundOfAction() {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        System.out.println("What next?");
+        System.out.println("1. Perform another test query");
+        System.out.println("2. Re-config system & train the A-DSS again");
+        System.out.println("Choice: ");
+        int nextRoundChoice = 0;
+        UserAgentState nextState = null;
+        try {
+            while (nextRoundChoice != 1 && nextRoundChoice != 2) {
+                nextRoundChoice = Integer.parseInt(br.readLine());
+                if (nextRoundChoice == 1) {
+                    nextState = UserAgentState.PerformTestQueries;
+                }
+                else if (nextRoundChoice == 2) {
+                    nextState = UserAgentState.InitSystem;
+                }
+                else {
+                    System.out.println("Wrong option. Try again!");
+                }
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return nextState;
     }
 }
