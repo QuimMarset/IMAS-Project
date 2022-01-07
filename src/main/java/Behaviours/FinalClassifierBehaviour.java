@@ -24,7 +24,7 @@ import static Utils.PredictionEvaluatorUtils.evaluateAndPrintPredictionResults;
 
 enum FinalClassifierAgentState {
     GetNumClassifier,
-    GetPercentageError,
+    GetMetric,
     InformClassifier,
     GetPredictions
 }
@@ -33,9 +33,9 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
     private FinalClassifierAgent finalclassifierAgent;
     private FinalClassifierAgentState finalClassifierAgentState;
     private boolean send = true;
-    double [] bestError;
+    double [] metrics;
     Object [] predictions;
-    double bError;
+    double bestMetric;
     private int numClassifiers = 0;
     private int numResultsReceived = 0;
 
@@ -50,8 +50,8 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
         if (this.finalClassifierAgentState == FinalClassifierAgentState.GetNumClassifier) {
             receiveNumberOfClassifiers();
         }
-        else if (this.finalClassifierAgentState == FinalClassifierAgentState.GetPercentageError) {
-            getPercentageError();
+        else if (this.finalClassifierAgentState == FinalClassifierAgentState.GetMetric) {
+            getMetric();
         }
         else if (this.finalClassifierAgentState == FinalClassifierAgentState.InformClassifier) {
             informClassifier();
@@ -74,7 +74,7 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
             try {
                 numClassifiers = Integer.parseInt(message.getContent());
                 System.out.println("Final Classifier : received number of classifiers from Data Manager : " + numClassifiers);
-                this.finalClassifierAgentState = FinalClassifierAgentState.GetPercentageError;
+                this.finalClassifierAgentState = FinalClassifierAgentState.GetMetric;
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -86,19 +86,19 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
     }
 
 
-    private boolean getPercentageError() {
-        bestError = new double[numClassifiers];
+    private boolean getMetric() {
+        metrics = new double[numClassifiers];
         boolean received = false;
         MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
         ACLMessage message = this.finalclassifierAgent.receive(performativeFilter);
         for(int i = 0; i<= numClassifiers;i++){
             if (message != null && message.getSender().getLocalName().startsWith("classifierAgent_")) {
                 double error = Double.parseDouble(message.getContent());
-                bestError[i]=error;
+                metrics[i]=error;
             }
         }
 
-        if(bestError[0]!=0.0){
+        if(metrics[0]!=0.0){
             received = true;
         }
         this.finalClassifierAgentState = FinalClassifierAgentState.InformClassifier;
@@ -115,7 +115,7 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
                 ACLMessage reply = message.createReply();
                 try {
 
-                    boolean haveBeenSent = this.getPercentageError();
+                    boolean haveBeenSent = this.getMetric();
 
                     if (haveBeenSent) {
                         reply.setContent("Percentage error Received");
@@ -140,7 +140,7 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
 
     private void getPredictions(){
         predictions = new Object[numClassifiers];
-        bError = 1000.0;
+        bestMetric = 0.0;
         int pos = 0;
         MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
         ACLMessage message = this.finalclassifierAgent.receive(performativeFilter);
@@ -150,8 +150,8 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
                 Object prediction = message.getContent();
                 predictions[i] = prediction;
             }
-            if(bestError[i]<bError){
-                bError = bestError[i];
+            if(metrics[i]>bestMetric){
+                bestMetric = metrics[i];
                 pos = i;
             }
         }
