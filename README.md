@@ -19,18 +19,26 @@ Details of the minimum requirements of implementation and evaluation criteria ca
 - Lombok v1.18.22 _//for auto-generating getters/setters_
 - Apache slf4j v1.7.32 _//for logging_
 - Weka v3.8.5 _//for J48 decision trees_
+- Properties Maven Plugin v1.0.0 _//to read properties file in pom.xml_
 
 ## Execution instructions
 ### Windows
-#### Method 1 - from run/debug configuration
-![img.png](img.png)
-
-#### Method 2 - from Maven command line
 1. On the right panel, open Maven, click on "Execute Maven Goal":
-![img_1.png](img_1.png)
-2. ```mvn install```
-3. ```mvn compile```
-4. ```mvn -P jade-gui-execution exec:java```
+
+    ![img_1.png](img_1.png)
+2. Run goal: ```mvn clean install```
+3. Add the following run/debug configuration:
+
+    ![img.png](img.png)
+4. Run the config:
+
+    ![img_3.png](img_3.png)
+
+_P.S. doing a clean install isn't required everytime unless there have been some changes in dependencies/plugins or the way properties are loaded._
+
+_P.P.S. the MAS takes properties from the properties file src/resources/adss.properties instead of directly specifying in pom.xml. We feel this is a cleaner and more modular way to specify the same._
+
+![img_4.png](img_4.png)
 
 Once the MAS is up, it will prompt for the configuration file to start the system. This file is used to configure the ADSS system like the no. of classifiers, location of the training & validation dataset, no. of attributes & instances used for training & validation. The basic config can be found at _config/config.xml_.
 ![img_2.png](img_2.png)
