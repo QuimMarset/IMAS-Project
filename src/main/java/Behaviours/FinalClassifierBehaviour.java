@@ -2,10 +2,8 @@ package Behaviours;
 
 import Agents.ClassifierAgent;
 import Agents.FinalClassifierAgent;
-import Utils.AuditDataRowWithPrediction;
-import Utils.ClassifierInstances;
-import Utils.Configuration;
-import Utils.DatasetManager;
+import Agents.UserAgent;
+import Utils.*;
 import jade.core.AID;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
@@ -17,45 +15,56 @@ import weka.classifiers.Classifier;
 import weka.core.Instances;
 import weka.classifiers.trees.J48;
 
+import javax.management.AttributeNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
 import static Utils.PredictionEvaluatorUtils.evaluateAndPrintPredictionResults;
 
+enum FinalClassifierAgentState {
+    GetNumClassifier,
+    GetPercentageError,
+    InformClassifier,
+    GetPredictions
+}
 
 public class FinalClassifierBehaviour extends CyclicBehaviour {
     private FinalClassifierAgent finalclassifierAgent;
+    private FinalClassifierAgentState finalClassifierAgentState;
     private boolean send = true;
+    double [] bestError;
+    Object [] predictions;
+    double bError;
     private int numClassifiers = 0;
     private int numResultsReceived = 0;
 
-    public FinalClassifierBehaviour(FinalClassifierAgent classifierAgent) {
-        this.finalclassifierAgent = classifierAgent;
+    public FinalClassifierBehaviour(FinalClassifierAgent finalclassifierAgent) {
+        super(finalclassifierAgent);
+        this.finalclassifierAgent = finalclassifierAgent;
+        this.finalClassifierAgentState = FinalClassifierAgentState.GetNumClassifier;
     }
 
     //@Override
     public void action() {
-        if (this.send) {
+        if (this.finalClassifierAgentState == FinalClassifierAgentState.GetNumClassifier) {
             receiveNumberOfClassifiers();
         }
+        else if (this.finalClassifierAgentState == FinalClassifierAgentState.GetPercentageError) {
+            getPercentageError();
+        }
+        else if (this.finalClassifierAgentState == FinalClassifierAgentState.InformClassifier) {
+            informClassifier();
+        }
+        else if (this.finalClassifierAgentState == FinalClassifierAgentState.GetPredictions) {
+            getPredictions();
+        }
+
     }
 
-    private void trainModel() {
-
-    }
-
-    private void testModel(){
-
-    }
 
     private void receiveNumberOfClassifiers() {
-        /*
-        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
-        message.addReceiver(new AID("dataManagerAgent", AID.ISLOCALNAME));
-        this.finalclassifierAgent.send(message);
-        this.send = false;
-        */
+
         System.out.println("Final classifier : receiveNumberOfClassifiers()");
         MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
         MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("dataManagerAgent", AID.ISLOCALNAME));
@@ -65,7 +74,7 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
             try {
                 numClassifiers = Integer.parseInt(message.getContent());
                 System.out.println("Final Classifier : received number of classifiers from Data Manager : " + numClassifiers);
-                waitForResultsFromClassifierAgents();
+                this.finalClassifierAgentState = FinalClassifierAgentState.GetPercentageError;
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -77,89 +86,89 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
     }
 
 
-    private void waitForResultsFromClassifierAgents() {
-        double bestError = 1000;
-        J48 bestClassifier = null;
-        String bestClassifierName = "";
-        while(numResultsReceived < numClassifiers) {
+    private boolean getPercentageError() {
+        bestError = new double[numClassifiers];
+        boolean received = false;
+        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+        ACLMessage message = this.finalclassifierAgent.receive(performativeFilter);
+        for(int i = 0; i<= numClassifiers;i++){
+            if (message != null && message.getSender().getLocalName().startsWith("classifierAgent_")) {
+                double error = Double.parseDouble(message.getContent());
+                bestError[i]=error;
+            }
+        }
+
+        if(bestError[0]!=0.0){
+            received = true;
+        }
+        this.finalClassifierAgentState = FinalClassifierAgentState.InformClassifier;
+        return received;
+    }
+
+    private void informClassifier() {
+        for(int i=0; i<=numClassifiers; i++) {
             MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
-            MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("classifierAgent_4", AID.ISLOCALNAME));
+            MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("classifierAgent_" + (i + 1), AID.ISLOCALNAME));
             ACLMessage message = this.finalclassifierAgent.receive(MessageTemplate.and(performativeFilter, senderFilter));
-            System.out.println("Final classifier - Classifier sender : " + message.getSender());
-            System.out.println(message);
-            if (message != null && message.getSender().getLocalName().equals("classifierAgent")) {
-                System.out.println("Final Classifier : ...Received message from Classifier Agent");
+
+            if (message != null) {
+                ACLMessage reply = message.createReply();
                 try {
-                    Map<Double, J48> content = (HashMap<Double, J48>) message.getContentObject();
 
-                    Object[][] array = new String[content.size()][2];
-                    int count = 0;
-                    for(Map.Entry<Double, J48> entry : content.entrySet()){
-                        array[count][0] = entry.getKey();
-                        array[count][1] = entry.getValue();
-                        double error = entry.getKey();
-                        J48 model = entry.getValue();
-                        if(error < bestError) {
-                            bestError = error;
-                            bestClassifier = model;
-                            bestClassifierName = message.getSender().getName();
-                        }
-                        count++;
-                    }
+                    boolean haveBeenSent = this.getPercentageError();
 
-
-
-                    /*
-                    double error = Double.parseDouble(message.getContent());
-                    System.out.println("Classifier Error rate : " + error);
-
-                    if(error < bestError) {
-                        bestError = error;
-                        bestClassifier = message.getSender().getName();
-                        DFAgentDescription dfd = new DFAgentDescription();
+                    if (haveBeenSent) {
+                        reply.setContent("Percentage error Received");
+                        this.finalClassifierAgentState = FinalClassifierAgentState.GetPredictions;
+                    } else {
+                        reply.setPerformative(ACLMessage.REFUSE);
+                        reply.setContent("No Percentage Error Found");
 
                     }
-*/
-                    //J48 model = (J48) message.getContentObject();
-                    //System.out.println("Classifier Model : ");
-                    //System.out.println(model);
-                    /*
-                    Configuration configuration = (Configuration) message.getContentObject();
-                    this.numClassifiers = configuration.getNumClassifiers();
-                    this.datasetManager = new DatasetManager(configuration);
-
-                    this.dataManagerAgentState = DataManagerAgentState.WaitingForTrain;
-                    */
-                } catch (UnreadableException e) {
-                    e.printStackTrace();
+                } catch (IndexOutOfBoundsException e) {
+                    reply.setPerformative(ACLMessage.REFUSE);
+                    reply.setContent("The test queries contain invalid instance indices");
                 }
-                numResultsReceived++;
+
+                this.finalclassifierAgent.send(reply);
             } else {
                 this.block();
             }
         }
 
-        System.out.println("Best Classifier : "+ bestClassifierName + "\n Error: " + bestError + "\n Model: " + bestClassifier + "\n");
     }
-    /*
-    private void waitForPetitionResults() {
-        MessageTemplate messageTemplate = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
-        ACLMessage message = this.userAgent.receive(messageTemplate);
-        if (message != null && message.getSender().getLocalName().equals("dataManagerAgent")) {
-            //TODO: get predictions for the 15 data rows
-            try {
-                AuditDataRowWithPrediction[] petitionResults = (AuditDataRowWithPrediction[]) message.getContentObject();
-                logger.log(Level.INFO, "Received classifications for the chosen ");
-                evaluateAndPrintPredictionResults(petitionResults);
+
+    private void getPredictions(){
+        predictions = new Object[numClassifiers];
+        bError = 1000.0;
+        int pos = 0;
+        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+        ACLMessage message = this.finalclassifierAgent.receive(performativeFilter);
+
+        for(int i = 0; i<= numClassifiers;i++){
+            if (message != null && message.getSender().getLocalName().startsWith("classifierAgent_")) {
+                Object prediction = message.getContent();
+                predictions[i] = prediction;
             }
-            catch (UnreadableException e) {
-                e.printStackTrace();
+            if(bestError[i]<bError){
+                bError = bestError[i];
+                pos = i;
             }
         }
-        else {
-            this.block();
-        }
-    }*/
+        sendPrediction(pos);
+        this.finalClassifierAgentState = FinalClassifierAgentState.GetPredictions;
+
+    }
+
+    private void sendPrediction(int pos){
+        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+        message.addReceiver(new AID("userAgent", AID.ISLOCALNAME));
+
+        message.setContent(String.valueOf(predictions[pos]));
+        this.finalclassifierAgent.send(message);
+    }
+
+
 
 
 }
