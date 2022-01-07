@@ -6,7 +6,7 @@
 
     <groupId>urv.imas</groupId>
     <artifactId>IMAS-Project</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <repositories>
         <repository>
@@ -26,28 +26,29 @@
                     <target>8</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <!-- Associate the read-project-properties goal with the initialize phase, to read the properties file. -->
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>src/main/resources/adss.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
     <profiles>
-        <profile>
-            <id>jade-gui</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.0.0</version>
-                        <configuration>
-                            <mainClass>jade.Boot</mainClass>
-                            <arguments>
-                                <argument>-gui</argument>
-                            </arguments>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <profile>
             <id>jade-gui-execution</id>
             <build>
@@ -62,16 +63,13 @@
                                 <argument>-gui</argument>
                                 <argument>-agents</argument>
                                 <argument>
-                                    userAgent:Agents.UserAgent;
-                                    dataManagerAgent:Agents.DataManagerAgent;
-                                    finalClassifierAgent:Agents.FinalClassifierAgent
+                                    ${agents}
                                 </argument>
                                 <argument>
                                     -port
                                 </argument>
-
                                 <argument>
-                                    12344
+                                    ${port}
                                 </argument>
                             </arguments>
                         </configuration>
@@ -80,12 +78,6 @@
             </build>
         </profile>
     </profiles>
-
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -120,7 +112,11 @@
             <artifactId>weka-stable</artifactId>
             <version>3.8.5</version>
         </dependency>
-
+        <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/properties-maven-plugin -->
+        <dependency>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>properties-maven-plugin</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
-
 </project>
