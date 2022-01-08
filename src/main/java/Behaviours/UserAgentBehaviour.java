@@ -56,24 +56,13 @@ public class UserAgentBehaviour extends CyclicBehaviour {
             waitForQueriesRequestResponse();
         }
 
-        else if (this.state == UserAgentState.WaitForQueriesResults) {
+        else {
             // Wait for test queries results
             Predictions predictions = receiveTestQueriesResults();
             if (predictions != null) {
                 this.printTestQueriesResults(predictions);
                 System.out.println("\nTest Instances have been classified");
                 System.out.println("Introduce again another test query\n");
-                this.state = UserAgentState.PerformTestQueries;
-            }
-        }
-
-        else {
-            //Idle and waiting for user to prompt either to repeat config+training or testing
-            boolean repeatTraining = UserInteractionUtils.promptUserForNextRoundOfAction();
-            if (repeatTraining) {
-                this.state = UserAgentState.InitSystem;
-            }
-            else {
                 this.state = UserAgentState.PerformTestQueries;
             }
         }

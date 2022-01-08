@@ -8,6 +8,10 @@
         15
     </instances>
     <attributes>
+        PARA_A
+        Score_A
+        Risk_A
+        PARA_B
         TOTAL
         numbers
         Risk_C
@@ -18,5 +22,11 @@
         PROB
         RiSk_E
         History
+        Risk_F
+        Score
+        Inherent_Risk
+        CONTROL_RISK
+        Detection_Risk
+        Audit_Risk
     </attributes>
 </TestQuery>
