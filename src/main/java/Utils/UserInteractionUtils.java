@@ -70,6 +70,8 @@ public final class UserInteractionUtils {
     private static TestQuery getTestQueryFromFile() {
         int[] instanceIndices;
         List<String> attributesName;
+        boolean groundTruthAvailable;
+        int[] groundTruthValues = null;
 
         while (true) {
             String filePath = getXMLFile("./config/testQuery.xml", "Select the Test Query file to test");
@@ -77,7 +79,12 @@ public final class UserInteractionUtils {
             try {
                 instanceIndices = testQueryParser.getIntListAttribute("instances");
                 attributesName = testQueryParser.getStringListAttribute("attributes");
-                return new TestQuery(instanceIndices, attributesName);
+                String groundTruthAvailableStr = testQueryParser.getStringAttribute("groundTruthAvailable");
+                groundTruthAvailable = Boolean.parseBoolean(groundTruthAvailableStr);
+                if(groundTruthAvailable) {
+                    groundTruthValues = testQueryParser.getIntListAttribute("groundTruthValues");
+                }
+                return new TestQuery(instanceIndices, attributesName, groundTruthAvailable, groundTruthValues);
             }
             catch (NumberFormatException e) {
                 System.out.println(e.getMessage());

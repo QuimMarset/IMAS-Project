@@ -12,7 +12,7 @@ public class Predictions implements Serializable {
         this.predictions = predictions;
     }
 
-    private static String translateLabel(double label) {
+    public static String translateLabel(double label) {
         if (label == 0) {
             return "Normal";
         }

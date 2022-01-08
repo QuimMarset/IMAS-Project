@@ -65,7 +65,7 @@ public class DataManagerAgent extends Agent {
         int[] instanceIndices;
         List<String> attributeNames;
 
-        if (testQuery.isRandom()) {
+        if (testQuery.isRandomMode()) {
             /* Generate a random test query containing 15 instances, and each instance will contain 20 attributes
                This process seem redundant, but it is for the sake of filling the test query that will be later returned
                to the User Agent */

@@ -111,7 +111,7 @@ public class UserAgentBehaviour extends CyclicBehaviour {
             if (message.getPerformative() == ACLMessage.AGREE) {
                 try {
                     this.currentTestQuery = (TestQuery) message.getContentObject();
-                    if (this.currentTestQuery.isRandom()) {
+                    if (this.currentTestQuery.isRandomMode()) {
                         System.out.println("Random generated query:\n" + this.currentTestQuery);
                     }
                     System.out.println("Now wait for the results to come");
@@ -155,10 +155,16 @@ public class UserAgentBehaviour extends CyclicBehaviour {
     private void printTestQueriesResults(Predictions predictions) {
         System.out.println("\nTest Query Results:");
         int[] instanceIndices = this.currentTestQuery.getInstanceIndices();
+        boolean groundTruthAvailable = this.currentTestQuery.isGroundTruthAvailable();
+        int[] groundTruthValues = null;
+        if(groundTruthAvailable) {
+           groundTruthValues = this.currentTestQuery.getGroundTruthValues();
+        }
+
         List<String> predicted = predictions.getPredictions();
 
         for (int i = 0; i < instanceIndices.length; ++i) {
-            System.out.println("Test instance " + instanceIndices[i] + ": Predicted = " + predicted.get(i));
+            System.out.println("Test instance " + instanceIndices[i] + ": Predicted = " + predicted.get(i) + (groundTruthAvailable ? (" | Actual = " + Predictions.translateLabel(groundTruthValues[i])): ""));
         }
     }
 }
