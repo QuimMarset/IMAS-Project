@@ -34,6 +34,4 @@ public class FinalClassifierAgent extends Agent {
         }
     }
 
-    public void predictInstances(Instances instances) throws Exception {
-    }
 }

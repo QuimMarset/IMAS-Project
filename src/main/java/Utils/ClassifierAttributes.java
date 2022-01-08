@@ -8,19 +8,12 @@ import weka.filters.unsupervised.attribute.Remove;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClassifierAttributes {
+public class ClassifierAttributes extends AttributesFilter {
 
-    List<Attribute> attributes;
+    ArrayList<Attribute> attributes;
 
     public ClassifierAttributes(Instances instances) {
-        this.generateAttributeList(instances);
-    }
-
-    private void generateAttributeList(Instances instances) {
-        this.attributes = new ArrayList<>();
-        for (int i = 0; i < instances.numAttributes(); ++i) {
-            this.attributes.add(instances.attribute(i));
-        }
+        this.attributes = this.createAttributeList(instances);
     }
 
     private boolean containsAttribute(Attribute attribute, Instances instances) {
@@ -56,18 +49,6 @@ public class ClassifierAttributes {
 
     public Instances filterClassifiableInstances(Instances instances) {
         int[] attributeIndices = this.getAttributesToKeep(instances);
-
-        Remove removeFilter = new Remove();
-        removeFilter.setAttributeIndicesArray(attributeIndices);
-        removeFilter.setInvertSelection(true);
-        try {
-            removeFilter.setInputFormat(instances);
-            instances = Filter.useFilter(instances, removeFilter);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return instances;
+        return this.filterAttributes(instances, attributeIndices);
     }
 }

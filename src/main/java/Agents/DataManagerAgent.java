@@ -48,9 +48,9 @@ public class DataManagerAgent extends Agent {
     }
 
     public ClassifierInstances getClassifierInstances() {
-        int numTrainInstances = configuration.getNumTrainInstances();
-        int validationPercentage = configuration.getValidationPercentage();
-        int numTrainAttributes = configuration.getNumTrainAttributes();
+        int numTrainInstances = this.configuration.getNumTrainInstances();
+        int validationPercentage = this.configuration.getValidationPercentage();
+        int numTrainAttributes = this.configuration.getNumTrainAttributes();
 
         ClassifierInstances classifierInstances = this.datasetManager.getClassifierInstances(numTrainInstances,
                 validationPercentage, numTrainAttributes);
@@ -89,6 +89,22 @@ public class DataManagerAgent extends Agent {
         return this.classifierAttributes.get(classifier).filterClassifiableInstances(testInstances);
     }
 
+    private void checkConfigurationWithDataset() throws IndexOutOfBoundsException {
+        int numTrainInstances = this.configuration.getNumTrainInstances();
+        int numTrainAttributes = this.configuration.getNumTrainAttributes();
+        int validationPercentage = this.configuration.getValidationPercentage();
+
+        int numNoClassAttributes = this.datasetManager.getNumNoClassAttributes();
+        int numTrainDatasetInstances = this.datasetManager.getNumTrainInstances();
+
+        if (numTrainInstances > numTrainDatasetInstances || numTrainAttributes > numNoClassAttributes ||
+                validationPercentage > 100) {
+            throw new IndexOutOfBoundsException("The configuration tries to train with either more instances or " +
+                    "attributes the dataset has, or testing with more attributes, or validating with a percentage " +
+                    "bigger than 100");
+        }
+    }
+
     protected void setup() {
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
@@ -105,22 +121,6 @@ public class DataManagerAgent extends Agent {
         catch (FIPAException e) {
             logger.log(Logger.SEVERE, "Agent " + getLocalName() + " - Cannot register with DF", e);
             doDelete();
-        }
-    }
-
-    private void checkConfigurationWithDataset() throws IndexOutOfBoundsException {
-        int numTrainInstances = this.configuration.getNumTrainInstances();
-        int numTrainAttributes = this.configuration.getNumTrainAttributes();
-        int validationPercentage = this.configuration.getValidationPercentage();
-
-        int numNoClassAttributes = this.datasetManager.getNumNoClassAttributes();
-        int numTrainDatasetInstances = this.datasetManager.getNumTrainInstances();
-
-        if (numTrainInstances > numTrainDatasetInstances || numTrainAttributes > numNoClassAttributes ||
-                validationPercentage > 100) {
-            throw new IndexOutOfBoundsException("The configuration tries to train with either more instances or " +
-                    "attributes the dataset has, or testing with more attributes, or validating with a percentage " +
-                    "bigger than 100");
         }
     }
 }
