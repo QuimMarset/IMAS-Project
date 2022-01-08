@@ -11,6 +11,7 @@ import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+import jade.util.Logger;
 import weka.core.Instances;
 
 import javax.management.AttributeNotFoundException;
@@ -18,84 +19,159 @@ import java.io.IOException;
 
 public class DataManagerBehaviour extends CyclicBehaviour {
 
+    private final Logger logger = Logger.getMyLogger(getClass().getName());
     private final DataManagerAgent dataManagerAgent;
-    private DataManagerAgentState dataManagerAgentState;
-    private int numTrainedClassifiers = 0;
+    private DataManagerAgentState state;
+    private boolean classifiersCreated;
+    private int numTrainedClassifiers;
     private int numClassifiers;
-
     private int numAskedClassifiers;
-    private int numClassifiersFinished;
-
+    private int numFinishedClassifiers;
     private ACLMessage messagePendingToReply;
+    private Instances[] preprocessedTestInstances;
 
     public DataManagerBehaviour(DataManagerAgent dataManagerAgent) {
         super(dataManagerAgent);
         this.dataManagerAgent = dataManagerAgent;
-        this.dataManagerAgentState = DataManagerAgentState.Idle;
+        this.state = DataManagerAgentState.WaitingForSystemConfiguration;
+        this.classifiersCreated = false;
+        this.numTrainedClassifiers = 0;
     }
 
     @Override
     public void action() {
-        if (this.dataManagerAgentState == DataManagerAgentState.Idle) {
-            this.waitForSystemConfiguration();
+        if (this.state == DataManagerAgentState.WaitingForSystemConfiguration) {
+            Configuration configuration = this.receiveSystemConfiguration();
+            if (configuration != null) {
+                // Configuration has been correctly received
+                boolean correctlyInitialized = this.initializeDatasetManager(configuration);
+                if (correctlyInitialized) {
+                    this.numClassifiers = configuration.getNumClassifiers();
+                    this.sendNumOfClassifiersToFinalClassifier();
+                    this.state = DataManagerAgentState.WaitingForFinalClassifierAck;
+                }
+            }
         }
-        else if (this.dataManagerAgentState == DataManagerAgentState.WaitingForTrain) {
+
+        else if (this.state == DataManagerAgentState.WaitingForFinalClassifierAck) {
+            boolean informReceived = this.receiveFinalClassifierInform();
+            if (informReceived) {
+                // This happens when this agent has sent the number of classifiers that will predict the test query
+                if (this.classifiersCreated) {
+                    this.sendTestInstancesToClassifiers();
+                    this.state = DataManagerAgentState.WaitingForClassifiersToPredict;
+                }
+                else {
+                    // This happens when this agent has sent the number of created classifiers
+                    this.state = DataManagerAgentState.CreateClassifiers;
+                }
+            }
+        }
+
+        else if (this.state == DataManagerAgentState.CreateClassifiers) {
+            this.createClassifierAgents();
+            this.classifiersCreated = true;
+            this.state = DataManagerAgentState.WaitingForClassifiersToTrain;
+        }
+
+        else if (this.state == DataManagerAgentState.WaitingForClassifiersToTrain) {
             this.waitForClassifiersToTrain();
+            if (this.numTrainedClassifiers == this.numClassifiers) {
+                this.logger.log(Logger.INFO, "All classifiers have end training");
+                this.sendInformToUserAgent();
+                this.state = DataManagerAgentState.WaitingForQueries;
+            }
         }
-        else if (this.dataManagerAgentState == DataManagerAgentState.WaitingForQueries) {
-            this.waitForTestQueriesToClassify();
+
+        else if (this.state == DataManagerAgentState.WaitingForQueries) {
+            TestQuery testQuery = this.receiveTestQuery();
+            if (testQuery != null) {
+                Instances testInstances = this.getTestInstances(testQuery);
+                if (testInstances != null) {
+                    // Test Instances have been retrieved without problems
+                    this.preprocessTestInstances(testInstances);
+                    if (this.numAskedClassifiers > 0) {
+                        // At least one classifier can predict the received test query
+                        this.sendNumberOfAskedClassifiersToFinalClassifier();
+                        this.state = DataManagerAgentState.WaitingForFinalClassifierAck;
+                    }
+                    this.sendTestQueryResponseToUserAgent(testQuery);
+                }
+            }
         }
+
         else {
-            // Waiting for query answering
-            this.waitForQueryAnswers();
+            /*
+            Waiting for classifiers to end predicting (not returning the results, but as a way for this agent to
+            know everything went good, and wait for new test queries)
+            */
+            this.waitForClassifiersToEndPredicting();
+            if (this.numAskedClassifiers == this.numFinishedClassifiers) {
+                this.logger.log(Logger.INFO, "The ordered classifiers have end predicting instances");
+                this.state = DataManagerAgentState.WaitingForQueries;
+            }
         }
     }
 
-    private void sendNumberOfClassifiers() {
-        System.out.println("Data manager : sending number of classifiers to Final Classifier");
+    private Configuration receiveSystemConfiguration() {
+        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
+        MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("userAgent", AID.ISLOCALNAME));
+        ACLMessage message = this.dataManagerAgent.receive(MessageTemplate.and(performativeFilter, senderFilter));
+
+        if (message != null) {
+            try {
+                Configuration configuration = (Configuration) message.getContentObject();
+                this.messagePendingToReply = message;
+                this.logger.log(Logger.INFO, "System configuration received");
+                return configuration;
+            }
+            catch (UnreadableException e) {
+                ACLMessage reply = message.createReply();
+                reply.setPerformative(ACLMessage.REFUSE);
+                reply.setContent("The configuration file cannot be retrieved from the message");
+                this.dataManagerAgent.send(reply);
+            }
+        }
+        else {
+            this.block();
+        }
+        return null;
+    }
+
+    private boolean initializeDatasetManager(Configuration configuration) {
+        try {
+            this.dataManagerAgent.initializeDatasetManager(configuration);
+            return true;
+        }
+        catch (IndexOutOfBoundsException e) {
+            ACLMessage reply = this.messagePendingToReply.createReply();
+            reply.setPerformative(ACLMessage.REFUSE);
+            reply.setContent(e.getMessage());
+            this.dataManagerAgent.send(reply);
+            this.messagePendingToReply = null;
+        }
+        return false;
+    }
+
+    private void sendNumOfClassifiersToFinalClassifier() {
         ACLMessage message = new ACLMessage(ACLMessage.INFORM);
         message.addReceiver(new AID("finalClassifierAgent", AID.ISLOCALNAME));
         message.setContent(String.valueOf(this.numClassifiers));
         this.dataManagerAgent.send(message);
     }
 
-    private void waitForSystemConfiguration() {
-        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
-        MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("userAgent", AID.ISLOCALNAME));
-
+    private boolean receiveFinalClassifierInform() {
+        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+        MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("finalClassifierAgent", AID.ISLOCALNAME));
         ACLMessage message = this.dataManagerAgent.receive(MessageTemplate.and(performativeFilter, senderFilter));
-
         if (message != null) {
-            ACLMessage reply = message.createReply();
-
-            try {
-                Configuration configuration = (Configuration) message.getContentObject();
-                this.numClassifiers = configuration.getNumClassifiers();
-                this.dataManagerAgent.initializeDatasetManager(configuration);
-                this.createClassifierAgents();
-
-                this.dataManagerAgentState = DataManagerAgentState.WaitingForTrain;
-
-                reply.setPerformative(ACLMessage.AGREE);
-                reply.setContent("The classifiers have been creating. Wait for them to train");
-
-                // Store the message to later reply with the INFORM performative once the classifiers are trained
-                this.messagePendingToReply = message;
-            }
-            catch (UnreadableException e) {
-                reply.setPerformative(ACLMessage.REFUSE);
-                reply.setContent("The configuration file cannot be retrieved from the message");
-            }
-            catch (IndexOutOfBoundsException e) {
-                reply.setPerformative(ACLMessage.REFUSE);
-                reply.setContent("There is a problem with the configuration settings to train the classifiers");
-            }
-
-            this.dataManagerAgent.send(reply);
+            this.logger.log(Logger.INFO, "Inform from Final Classifier received");
+            return true;
         }
         else {
             this.block();
         }
+        return false;
     }
 
     private void createClassifierAgents() {
@@ -114,7 +190,6 @@ public class DataManagerBehaviour extends CyclicBehaviour {
                 e.printStackTrace();
             }
         }
-        sendNumberOfClassifiers();
     }
 
     private void waitForClassifiersToTrain() {
@@ -123,110 +198,126 @@ public class DataManagerBehaviour extends CyclicBehaviour {
 
         if (message != null && message.getSender().getLocalName().startsWith("classifierAgent_")) {
             ++this.numTrainedClassifiers;
-
-            if (this.numClassifiers == this.numTrainedClassifiers) {
-
-                ACLMessage reply = this.messagePendingToReply.createReply();
-                reply.setPerformative(ACLMessage.INFORM);
-                reply.setContent("All classifiers have been trained, test queries can be performed");
-                this.dataManagerAgent.send(reply);
-
-                this.dataManagerAgentState = DataManagerAgentState.WaitingForQueries;
-            }
         }
         else {
             this.block();
         }
     }
 
-    private boolean sendTestInstancesToClassifiers(TestQuery testQuery)
-            throws IndexOutOfBoundsException, AttributeNotFoundException {
-
-        this.numAskedClassifiers = 0;
-        Instances testInstances = this.dataManagerAgent.getTestInstances(testQuery);
-
-        for (int i = 0; i < this.numClassifiers; ++i) {
-
-            if (this.dataManagerAgent.areTestInstancesPredictable(testInstances, i)) {
-                this.numAskedClassifiers++;
-                ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
-                message.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                message.addReceiver(new AID("classifierAgent_" + (i+1), AID.ISLOCALNAME));
-
-                Instances classifierTestInstances = this.dataManagerAgent.getClassifierTestInstances(testInstances, i);
-
-                try {
-                    message.setContentObject(classifierTestInstances);
-                    this.dataManagerAgent.send(message);
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        return this.numAskedClassifiers != 0;
+    private void sendInformToUserAgent() {
+        ACLMessage reply = this.messagePendingToReply.createReply();
+        reply.setPerformative(ACLMessage.INFORM);
+        reply.setContent("All classifiers have been trained, test queries can be performed");
+        this.dataManagerAgent.send(reply);
+        this.messagePendingToReply = null;
     }
 
-    private void waitForTestQueriesToClassify() {
+    private TestQuery receiveTestQuery() {
         MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
         MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("userAgent", AID.ISLOCALNAME));
         ACLMessage message = this.dataManagerAgent.receive(MessageTemplate.and(performativeFilter, senderFilter));
 
         if (message != null) {
-            ACLMessage reply = message.createReply();
             try {
-                TestQuery testQuery = (TestQuery) message.getContentObject();
-
-                boolean haveBeenSent = this.sendTestInstancesToClassifiers(testQuery);
-
-                if (haveBeenSent) {
-                    reply.setPerformative(ACLMessage.AGREE);
-                    if (testQuery.isRandom()) {
-                        reply.setContent("Random generated query:\n" + testQuery);
-                    }
-                    else {
-                        reply.setContent("The test queries will be processed");
-                    }
-                }
-                else {
-                    reply.setPerformative(ACLMessage.REFUSE);
-                    reply.setContent("No classifier was able to classify the passed instances");
-                }
+                this.messagePendingToReply = message;
+                this.logger.log(Logger.INFO, "Test Query received");
+                return (TestQuery) message.getContentObject();
             }
             catch (UnreadableException e) {
+                ACLMessage reply = message.createReply();
                 reply.setPerformative(ACLMessage.REFUSE);
-                reply.setContent("The test queries cannot be read");
+                reply.setContent("The test query cannot be retrieved");
             }
-            catch (IndexOutOfBoundsException e) {
-                reply.setPerformative(ACLMessage.REFUSE);
-                reply.setContent("The test queries contain invalid instance indices");
-            }
-            catch (AttributeNotFoundException e) {
-                reply.setPerformative(ACLMessage.REFUSE);
-                reply.setContent("The test queries contain invalid attributes");
-            }
-            this.dataManagerAgent.send(reply);
         }
         else {
             this.block();
         }
+        return null;
     }
 
-    private void waitForQueryAnswers() {
+    private Instances getTestInstances(TestQuery testQuery) {
+        try {
+            this.logger.log(Logger.INFO, "Test instances from the query have been processed");
+            return this.dataManagerAgent.getTestInstances(testQuery);
+        }
+        catch (IndexOutOfBoundsException | AttributeNotFoundException e) {
+            ACLMessage reply = this.messagePendingToReply.createReply();
+            reply.setPerformative(ACLMessage.REFUSE);
+            reply.setContent(e.getMessage());
+            this.dataManagerAgent.send(reply);
+            this.messagePendingToReply = null;
+        }
+        return null;
+    }
+
+    private void preprocessTestInstances(Instances testInstances) {
+        this.numAskedClassifiers = 0;
+        this.numFinishedClassifiers = 0;
+        if (this.preprocessedTestInstances == null) {
+            this.preprocessedTestInstances = new Instances[this.numClassifiers];
+        }
+
+        for (int i = 0; i < this.numClassifiers; ++i) {
+            if (this.dataManagerAgent.areTestInstancesPredictable(testInstances, i)) {
+                this.numAskedClassifiers++;
+                this.preprocessedTestInstances[i] = this.dataManagerAgent.getClassifierTestInstances(testInstances, i);
+            }
+            else {
+                this.preprocessedTestInstances[i] = null;
+            }
+        }
+    }
+
+    private void sendNumberOfAskedClassifiersToFinalClassifier() {
+        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+        message.addReceiver(new AID("finalClassifierAgent", AID.ISLOCALNAME));
+        message.setContent(String.valueOf(this.numAskedClassifiers));
+        this.dataManagerAgent.send(message);
+    }
+
+    private void sendTestInstancesToClassifiers() {
+        for (int i = 0; i < this.preprocessedTestInstances.length; ++i) {
+            if (this.preprocessedTestInstances[i] != null) {
+                ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
+                message.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+                message.addReceiver(new AID("classifierAgent_" + (i + 1), AID.ISLOCALNAME));
+                try {
+                    message.setContentObject(this.preprocessedTestInstances[i]);
+                    this.dataManagerAgent.send(message);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void sendTestQueryResponseToUserAgent(TestQuery testQuery) {
+        ACLMessage reply = this.messagePendingToReply.createReply();
+        if (this.numAskedClassifiers > 0) {
+            reply.setPerformative(ACLMessage.AGREE);
+            try {
+                reply.setContentObject(testQuery);
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            reply.setPerformative(ACLMessage.REFUSE);
+            reply.setContent("No classifier was able to classify the passed instances");
+        }
+        this.dataManagerAgent.send(reply);
+    }
+
+    private void waitForClassifiersToEndPredicting() {
         MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
         ACLMessage message = this.dataManagerAgent.receive(performativeFilter);
-
         if (message != null && message.getSender().getLocalName().startsWith("classifierAgent_")) {
-            ++this.numClassifiersFinished;
-
-            if (this.numAskedClassifiers == this.numClassifiersFinished) {
-                // All the classifiers have finished the prediction
-                this.dataManagerAgentState = DataManagerAgentState.WaitingForQueries;
-            }
+            ++this.numFinishedClassifiers;
         }
         else {
             this.block();
         }
     }
+
 }

@@ -3,6 +3,7 @@ package Behaviours;
 import Agents.UserAgent;
 import Behaviours.Enums.UserAgentState;
 import Utils.Configuration;
+import Utils.Predictions;
 import Utils.TestQuery;
 import Utils.UserInteractionUtils;
 import jade.core.AID;
@@ -14,54 +15,77 @@ import jade.lang.acl.UnreadableException;
 import jade.util.Logger;
 
 import java.io.IOException;
-import java.util.logging.Level;
+import java.io.Serializable;
+import java.util.List;
+
 
 public class UserAgentBehaviour extends CyclicBehaviour {
 
     private final Logger logger = Logger.getMyLogger(getClass().getName());
-
     private final UserAgent userAgent;
-    private UserAgentState userAgentState;
+    private UserAgentState state;
+    private TestQuery currentTestQuery;
 
     public UserAgentBehaviour(UserAgent userAgent) {
         super(userAgent);
         this.userAgent = userAgent;
-        this.userAgentState = UserAgentState.InitSystem;
+        this.state = UserAgentState.InitSystem;
     }
 
     @Override
     public void action() {
-        if (this.userAgentState == UserAgentState.InitSystem) {
-            initializeSystem();
+        if (this.state == UserAgentState.InitSystem) {
+            Configuration configuration = UserInteractionUtils.getSystemConfiguration();
+            this.logger.log(Logger.INFO, "System configuration has been parsed");
+            this.sendSerializableToDataManager(configuration);
+            this.state = UserAgentState.WaitForTraining;
         }
-        else if (this.userAgentState == UserAgentState.WaitForTraining) {
-            waitForClassifiersToTrain();
+
+        else if (this.state == UserAgentState.WaitForTraining) {
+            this.waitForClassifiersToTrain();
         }
-        else if (this.userAgentState == UserAgentState.PerformTestQueries) {
-            performTestQueries();
+
+        else if (this.state == UserAgentState.PerformTestQueries) {
+            TestQuery testQuery = UserInteractionUtils.getTestQuery();
+            this.logger.log(Logger.INFO, "Test Query has been parsed");
+            this.sendSerializableToDataManager(testQuery);
+            this.state = UserAgentState.WaitForQueriesAcceptance;
         }
-        else if (this.userAgentState == UserAgentState.WaitForQueriesAcceptance) {
+
+        else if (this.state == UserAgentState.WaitForQueriesAcceptance) {
             waitForQueriesRequestResponse();
         }
-        else if (this.userAgentState == UserAgentState.WaitForQueriesResults) {
-            waitForQueriesResults();
+
+        else if (this.state == UserAgentState.WaitForQueriesResults) {
+            // Wait for test queries results
+            Predictions predictions = receiveTestQueriesResults();
+            if (predictions != null) {
+                this.printTestQueriesResults(predictions);
+                System.out.println("\nTest Instances have been classified");
+                System.out.println("Introduce again another test query\n");
+                this.state = UserAgentState.PerformTestQueries;
+            }
         }
+
         else {
             //Idle and waiting for user to prompt either to repeat config+training or testing
-            promptUserForNextRoundOfAction();
+            boolean repeatTraining = UserInteractionUtils.promptUserForNextRoundOfAction();
+            if (repeatTraining) {
+                this.state = UserAgentState.InitSystem;
+            }
+            else {
+                this.state = UserAgentState.PerformTestQueries;
+            }
         }
     }
 
-    private void initializeSystem() {
-        Configuration configuration = UserInteractionUtils.getSystemConfiguration();
-
+    private void sendSerializableToDataManager(Serializable contentObject) {
         ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
         message.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
         message.addReceiver(new AID("dataManagerAgent", AID.ISLOCALNAME));
         try {
-            message.setContentObject(configuration);
+            message.setContentObject(contentObject);
             this.userAgent.send(message);
-            this.userAgentState = UserAgentState.WaitForTraining;
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -74,38 +98,19 @@ public class UserAgentBehaviour extends CyclicBehaviour {
 
         if (message != null) {
             int messagePerformative = message.getPerformative();
-            if (messagePerformative == ACLMessage.AGREE) {
-                this.logger.log(Level.INFO, "The classifiers have been created correctly");
-            }
-            else if (messagePerformative == ACLMessage.REFUSE) {
+            if (messagePerformative == ACLMessage.REFUSE) {
                 // A refuse has been sent back because the training cannot be done with those system settings
-                this.userAgentState = UserAgentState.InitSystem;
-                System.out.println("\nThere were some problems with the system configuration. Enter them again");
+                this.state = UserAgentState.InitSystem;
+                System.out.println(message.getContent());
+                System.out.println("Select the configuration again");
             }
             else if (messagePerformative == ACLMessage.INFORM) {
-                this.userAgentState = UserAgentState.PerformTestQueries;
+                this.state = UserAgentState.PerformTestQueries;
                 System.out.println("\nThe classifiers have finished training. Test queries can be done now");
             }
         }
         else {
             this.block();
-        }
-    }
-
-    private void performTestQueries() {
-        TestQuery testQuery = UserInteractionUtils.getTestQuery();
-
-        ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
-        message.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-        message.addReceiver(new AID("dataManagerAgent", AID.ISLOCALNAME));
-
-        try {
-            message.setContentObject(testQuery);
-            this.userAgent.send(message);
-            this.userAgentState = UserAgentState.WaitForQueriesAcceptance;
-        }
-        catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -115,13 +120,22 @@ public class UserAgentBehaviour extends CyclicBehaviour {
 
         if (message != null) {
             if (message.getPerformative() == ACLMessage.AGREE) {
-                System.out.println(message.getContent());
-                System.out.println("Now wait for the results to come");
-                this.userAgentState = UserAgentState.WaitForQueriesResults;
+                try {
+                    this.currentTestQuery = (TestQuery) message.getContentObject();
+                    if (this.currentTestQuery.isRandom()) {
+                        System.out.println("Random generated query:\n" + this.currentTestQuery);
+                    }
+                    System.out.println("Now wait for the results to come");
+                    this.state = UserAgentState.WaitForQueriesResults;
+                }
+                catch (UnreadableException e) {
+                    e.printStackTrace();
+                }
             }
             else if (message.getPerformative() == ACLMessage.REFUSE) {
-                this.userAgentState = UserAgentState.PerformTestQueries;
+                this.state = UserAgentState.PerformTestQueries;
                 System.out.println(message.getContent());
+                System.out.println("Select the test query again");
             }
 
         }
@@ -130,16 +144,14 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         }
     }
 
-    private void waitForQueriesResults() {
+    private Predictions receiveTestQueriesResults() {
         MessageTemplate senderFilter = MessageTemplate.MatchSender(new AID("finalClassifierAgent", AID.ISLOCALNAME));
-        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.AGREE);
+        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
         ACLMessage message = this.userAgent.receive(MessageTemplate.and(senderFilter, performativeFilter));
 
         if (message != null) {
             try {
-                message.getContentObject();
-                //evaluateAndPrintPredictionResults(petitionResults);
-                this.userAgentState = UserAgentState.IdleOrRepeatTraining;
+                return (Predictions) message.getContentObject();
             }
             catch (UnreadableException e) {
                 e.printStackTrace();
@@ -148,9 +160,16 @@ public class UserAgentBehaviour extends CyclicBehaviour {
         else {
             this.block();
         }
+        return null;
     }
 
-    private void promptUserForNextRoundOfAction() {
-        this.userAgentState = UserInteractionUtils.promptUserForNextRoundOfAction();
+    private void printTestQueriesResults(Predictions predictions) {
+        System.out.println("\nTest Query Results:");
+        int[] instanceIndices = this.currentTestQuery.getInstanceIndices();
+        List<String> predicted = predictions.getPredictions();
+
+        for (int i = 0; i < instanceIndices.length; ++i) {
+            System.out.println("Test instance " + instanceIndices[i] + ": Predicted = " + predicted.get(i));
+        }
     }
 }

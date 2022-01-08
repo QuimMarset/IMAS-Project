@@ -6,7 +6,7 @@ import java.util.List;
 
 public class TestQuery implements Serializable {
 
-    private boolean randomMode;
+    private final boolean randomMode;
     private int[] instanceIndices;
     private List<String> attributeNames;
 

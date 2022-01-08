@@ -1,7 +1,10 @@
 package Behaviours.Enums;
 
 public enum DataManagerAgentState {
-    Idle,
-    WaitingForTrain,
-    WaitingForQueries
+    WaitingForSystemConfiguration,
+    WaitingForFinalClassifierAck,
+    CreateClassifiers,
+    WaitingForClassifiersToTrain,
+    WaitingForQueries,
+    WaitingForClassifiersToPredict
 }

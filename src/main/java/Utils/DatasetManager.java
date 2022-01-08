@@ -3,13 +3,10 @@ package Utils;
 import weka.core.Attribute;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils;
-import weka.filters.Filter;
-import weka.filters.unsupervised.attribute.Remove;
-
 import javax.management.AttributeNotFoundException;
 import java.util.*;
 
-public class DatasetManager {
+public class DatasetManager extends AttributesFilter {
 
     private final Instances trainData;
     private final Instances testData;
@@ -29,15 +26,7 @@ public class DatasetManager {
         this.numNoClassAttributes = this.trainData.numAttributes()-1;
         this.numTrainInstances = this.trainData.numInstances();
         this.numTestInstances = this.testData.numInstances();
-        this.attributeInfo = this.createAttributeArrayList(this.trainData);
-    }
-
-    private ArrayList<Attribute> createAttributeArrayList(Instances dataset) {
-        ArrayList<Attribute> attributeInfo = new ArrayList<>();
-        for (int i = 0; i < dataset.numAttributes(); ++i) {
-            attributeInfo.add(dataset.attribute(i));
-        }
-        return attributeInfo;
+        this.attributeInfo = this.createAttributeList(this.trainData);
     }
 
     private Instances readDataset(String datasetPath) {
@@ -53,24 +42,14 @@ public class DatasetManager {
         return data;
     }
 
-    private Instances filterAttributes(Instances instances, int[] attributesToKeep) {
+    @Override
+    protected Instances filterAttributes(Instances instances, int[] attributesToKeep) {
         // Add the class attribute when filtering
         int[] attributesToKeepPlusClass = new int[attributesToKeep.length + 1];
         System.arraycopy(attributesToKeep, 0, attributesToKeepPlusClass, 0, attributesToKeep.length);
         attributesToKeepPlusClass[attributesToKeepPlusClass.length-1] = instances.classIndex();
 
-        Remove removeFilter = new Remove();
-        removeFilter.setAttributeIndicesArray(attributesToKeepPlusClass);
-        removeFilter.setInvertSelection(true);
-        try {
-            removeFilter.setInputFormat(instances);
-            instances = Filter.useFilter(instances, removeFilter);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return instances;
+        return super.filterAttributes(instances, attributesToKeepPlusClass);
     }
 
     public ClassifierInstances getClassifierInstances(int numClassifierInstances, int validationPercentage,

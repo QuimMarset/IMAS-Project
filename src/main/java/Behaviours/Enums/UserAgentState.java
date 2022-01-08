@@ -6,5 +6,5 @@ public enum UserAgentState {
     PerformTestQueries,
     WaitForQueriesAcceptance,
     WaitForQueriesResults,
-    IdleOrRepeatTraining
+    InitSystemOrPerformTestQueries
 }
