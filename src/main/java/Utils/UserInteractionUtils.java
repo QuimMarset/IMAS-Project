@@ -118,32 +118,4 @@ public final class UserInteractionUtils {
 
         return filePath;
     }
-
-    public static boolean promptUserForNextRoundOfAction() {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("\nWhat next?");
-        System.out.println("1. Perform another test query");
-        System.out.println("2. Re-config system & train the A-DSS again");
-        System.out.println("Choice: ");
-        int nextRoundChoice = 0;
-        boolean trainAgain = false;
-        try {
-            while (nextRoundChoice != 1 && nextRoundChoice != 2) {
-                nextRoundChoice = Integer.parseInt(br.readLine());
-                if (nextRoundChoice == 1) {
-                    trainAgain = false;
-                }
-                else if (nextRoundChoice == 2) {
-                    trainAgain = true;
-                }
-                else {
-                    System.out.println("Wrong option. Try again!");
-                }
-            }
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        return trainAgain;
-    }
 }
