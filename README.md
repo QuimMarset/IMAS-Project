@@ -61,14 +61,15 @@ Type `1` or `2` in the console. If you select `1`, you will be prompted to selec
 ## Results
 The performance of the ADSS Classifier could be viewed in the logs:
 
-    ![img_5.JPG](img_5.JPG)
+![img_5](https://user-images.githubusercontent.com/36998939/148690100-562bdd76-4248-4deb-9684-12015430e076.JPG)
 
 And the results of the predictions are shown as follows: 
 
-    ![img_6.JPG](img_6.JPG)
+![img_6](https://user-images.githubusercontent.com/36998939/148690126-c6e44469-dae2-464f-9b03-1cb550d644ab.JPG)
 
 Secondly, the communication between the different types of agents could be viewed via the JADE GUI:
 
-    ![img_8.JPG](img_8.JPG)
+![img_8](https://user-images.githubusercontent.com/36998939/148690136-b08ee4b1-1c5c-46d4-bcc1-f70cd658abfe.JPG)
 
-    ![img_7.JPG](img_7.JPG)
+![img_7](https://user-images.githubusercontent.com/36998939/148690138-0416c342-3815-4559-bc57-09c7779bcf47.JPG)
+
