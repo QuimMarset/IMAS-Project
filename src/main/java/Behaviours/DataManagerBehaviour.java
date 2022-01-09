@@ -70,6 +70,7 @@ public class DataManagerBehaviour extends CyclicBehaviour {
 
         else if (this.state == DataManagerAgentState.CreateClassifiers) {
             this.createClassifierAgents();
+            this.dataManagerAgent.logClassifierAttributes();
             this.classifiersCreated = true;
             this.state = DataManagerAgentState.WaitingForClassifiersToTrain;
         }

@@ -113,6 +113,13 @@ public class DataManagerAgent extends Agent {
         }
     }
 
+    public void logClassifierAttributes() {
+        for (int i = 0; i < this.classifierAttributes.size(); ++i) {
+            this.logger.log(Logger.INFO, "Classifier " + (i+1) + " train attributes: " +
+                    this.classifierAttributes.get(i).toString());
+        }
+    }
+
     protected void setup() {
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
