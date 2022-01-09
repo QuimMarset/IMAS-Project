@@ -58,7 +58,8 @@ public class ClassifierAgent extends Agent {
             double f1Score = this.evaluation.fMeasure(1);
 
             this.logger.log(Level.INFO, "Classifier " + getLocalName() + " statistics:\n" +
-                    this.evaluation.toClassDetailsString() + "\n" + this.evaluation.toMatrixString());
+                    this.evaluation.toClassDetailsString() + "\n" + this.evaluation.toMatrixString() + "\n" +
+                    "Accuracy: " + Double.toString(1-this.evaluation.errorRate()));
 
             return f1Score;
         }
