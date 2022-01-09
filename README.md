@@ -71,5 +71,6 @@ Secondly, the communication between the different types of agents could be viewe
 
 ![img_8](https://user-images.githubusercontent.com/36998939/148690136-b08ee4b1-1c5c-46d4-bcc1-f70cd658abfe.JPG)
 
-![img_7](https://user-images.githubusercontent.com/36998939/148690138-0416c342-3815-4559-bc57-09c7779bcf47.JPG)
+![img_7](https://user-images.githubusercontent.com/36998939/148692376-b36527eb-6c58-4b9c-84fa-f8482276ac4b.JPG)
+
 
