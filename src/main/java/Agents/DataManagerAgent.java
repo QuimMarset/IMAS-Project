@@ -78,7 +78,15 @@ public class DataManagerAgent extends Agent {
             instanceIndices = testQuery.getInstanceIndices();
             attributeNames = testQuery.getAttributeNames();
         }
-        return this.datasetManager.getTestInstances(instanceIndices, attributeNames);
+
+        Instances testInstances = this.datasetManager.getTestInstances(instanceIndices, attributeNames);
+
+        // We have checked in the previous function if the test instances are invalid
+        int[] groundTruth = this.datasetManager.getGroundTruthValues(instanceIndices);
+        // It may contain -1 if the class value was not available
+        testQuery.setGroundTruthValues(groundTruth);
+
+        return testInstances;
     }
 
     public boolean areTestInstancesPredictable(Instances testInstances, int classifier) {

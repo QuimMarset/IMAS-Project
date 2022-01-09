@@ -79,14 +79,12 @@ public final class UserInteractionUtils {
             try {
                 instanceIndices = testQueryParser.getIntListAttribute("instances");
                 attributesName = testQueryParser.getStringListAttribute("attributes");
-                String groundTruthAvailableStr = testQueryParser.getStringAttribute("groundTruthAvailable");
-                groundTruthAvailable = Boolean.parseBoolean(groundTruthAvailableStr);
-                if(groundTruthAvailable) {
+                if (testQueryParser.existsAttribute("groundTruthValues")) {
                     groundTruthValues = testQueryParser.getIntListAttribute("groundTruthValues");
                 }
-                return new TestQuery(instanceIndices, attributesName, groundTruthAvailable, groundTruthValues);
+                return new TestQuery(instanceIndices, attributesName, groundTruthValues);
             }
-            catch (NumberFormatException e) {
+            catch (NumberFormatException | NullPointerException e) {
                 System.out.println(e.getMessage());
             }
         }

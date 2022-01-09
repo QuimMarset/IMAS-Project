@@ -5,6 +5,5 @@ public enum UserAgentState {
     WaitForTraining,
     PerformTestQueries,
     WaitForQueriesAcceptance,
-    WaitForQueriesResults,
-    InitSystemOrPerformTestQueries
+    WaitForQueriesResults
 }

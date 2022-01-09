@@ -30,12 +30,11 @@
         Detection_Risk
         Audit_Risk
     </attributes>
-    <groundTruthAvailable>true</groundTruthAvailable>
     <groundTruthValues>
         1
         0
         1
-        0
+        1
         1
         1
     </groundTruthValues>

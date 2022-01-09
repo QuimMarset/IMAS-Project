@@ -154,17 +154,23 @@ public class UserAgentBehaviour extends CyclicBehaviour {
 
     private void printTestQueriesResults(Predictions predictions) {
         System.out.println("\nTest Query Results:");
+        List<String> predicted = predictions.getPredictions();
         int[] instanceIndices = this.currentTestQuery.getInstanceIndices();
+
         boolean groundTruthAvailable = this.currentTestQuery.isGroundTruthAvailable();
         int[] groundTruthValues = null;
-        if(groundTruthAvailable) {
+        if (groundTruthAvailable) {
            groundTruthValues = this.currentTestQuery.getGroundTruthValues();
         }
 
-        List<String> predicted = predictions.getPredictions();
-
         for (int i = 0; i < instanceIndices.length; ++i) {
-            System.out.println("Test instance " + instanceIndices[i] + ": Predicted = " + predicted.get(i) + (groundTruthAvailable ? (" | Actual = " + Predictions.translateLabel(groundTruthValues[i])): ""));
+            if (groundTruthAvailable && groundTruthValues[i] != -1) {
+                System.out.println("Test instance " + instanceIndices[i] + ": Predicted = " + predicted.get(i) +
+                        " | Actual = " + Predictions.translateLabel(groundTruthValues[i]));
+            }
+            else {
+                System.out.println("Test instance " + instanceIndices[i] + ": Predicted = " + predicted.get(i));
+            }
         }
     }
 }

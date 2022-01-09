@@ -1,6 +1,7 @@
 package Utils;
 
 import weka.core.Attribute;
+import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils;
 import javax.management.AttributeNotFoundException;
@@ -135,6 +136,24 @@ public class DatasetManager extends AttributesFilter {
         else {
             throw new AttributeNotFoundException("Attribute " + attributeName + " does not belong to the dataset");
         }
+    }
+
+
+    public int[] getGroundTruthValues(int[] instanceIndices) {
+        int[] groundTruth = new int[instanceIndices.length];
+
+        for (int i = 0; i < instanceIndices.length; ++i) {
+            int index = instanceIndices[i];
+            Instance testInstance = this.testData.get(index);
+            if (!testInstance.classIsMissing()) {
+                groundTruth[i] = (int) testInstance.classValue();
+            }
+            else {
+                // Not available
+                groundTruth[i] = -1;
+            }
+        }
+        return groundTruth;
     }
 
     public int getNumTrainInstances() {

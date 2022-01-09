@@ -49,6 +49,14 @@ public class XMLParser {
         return attributeNode;
     }
 
+    public boolean existsAttribute(String attributeName) throws NullPointerException {
+        if (this.rootElement == null) {
+            throw new NullPointerException("The root node of the parsed XML file is null");
+        }
+        Node attributeNode = this.rootElement.getElementsByTagName(attributeName).item(0);
+        return attributeNode != null;
+    }
+
     public int getNumericAttribute(String attributeName) throws NullPointerException, NumberFormatException {
         Node attributeNode = this.getAttributeNode(attributeName);
         try {
@@ -66,7 +74,7 @@ public class XMLParser {
         return attributeNode.getTextContent();
     }
 
-    public String getPathAttribute(String attributeName) throws InvalidPathException {
+    public String getPathAttribute(String attributeName) throws NullPointerException, InvalidPathException {
         Node attributeNode = this.getAttributeNode(attributeName);
         String filePath = attributeNode.getTextContent();
         File file = new File(filePath);
@@ -76,7 +84,7 @@ public class XMLParser {
         return filePath;
     }
 
-    public int[] getIntListAttribute(String attributeName) throws NumberFormatException {
+    public int[] getIntListAttribute(String attributeName) throws NullPointerException, NumberFormatException {
         String[] elements = getStringAttribute(attributeName).split("\n");
         int[] intElements = new int[elements.length - 2];
         for (int i = 1; i < elements.length - 1; ++i) {
