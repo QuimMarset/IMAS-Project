@@ -138,7 +138,7 @@ public class FinalClassifierBehaviour extends CyclicBehaviour {
     }
 
     private boolean receivePredictions() {
-        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
+        MessageTemplate performativeFilter = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
         ACLMessage message = this.finalclassifierAgent.receive(performativeFilter);
 
         if (message != null && message.getSender().getLocalName().startsWith("classifierAgent_")) {

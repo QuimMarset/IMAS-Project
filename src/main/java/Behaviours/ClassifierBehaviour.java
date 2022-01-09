@@ -159,7 +159,7 @@ public class ClassifierBehaviour extends CyclicBehaviour {
     }
 
     private void sendTestPredictionsToFinalClassifier(double[] testPredictions) {
-        ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
+        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
         message.addReceiver(new AID("finalClassifierAgent", AID.ISLOCALNAME));
         try {
             message.setContentObject(testPredictions);
