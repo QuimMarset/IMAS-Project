@@ -2,11 +2,7 @@ package Utils;
 
 import weka.core.Attribute;
 import weka.core.Instances;
-import weka.filters.Filter;
-import weka.filters.unsupervised.attribute.Remove;
-
 import java.util.ArrayList;
-import java.util.List;
 
 public class ClassifierAttributes extends AttributesFilter {
 
@@ -50,5 +46,16 @@ public class ClassifierAttributes extends AttributesFilter {
     public Instances filterClassifiableInstances(Instances instances) {
         int[] attributeIndices = this.getAttributesToKeep(instances);
         return this.filterAttributes(instances, attributeIndices);
+    }
+
+    public String toString() {
+        StringBuilder attributeNames = new StringBuilder();
+        for (int i = 0; i < this.attributes.size(); ++i) {
+            if (i > 0) {
+                attributeNames.append(", ");
+            }
+            attributeNames.append(this.attributes.get(i).name());
+        }
+        return attributeNames.toString();
     }
 }
