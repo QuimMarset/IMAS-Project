@@ -41,7 +41,7 @@ public final class UserInteractionUtils {
         System.out.println("Select querying mode:");
         System.out.println("1. Load an xml containing the query");
         System.out.println("2. Let the system randomly select 15 instances with 20 attributes each");
-        System.out.println("Choice: ");
+        System.out.println("Choice (type 1 or 2): ");
 
         int queryMode = 0;
         TestQuery testQuery = null;
@@ -49,6 +49,7 @@ public final class UserInteractionUtils {
         try {
             while (queryMode != 1 && queryMode != 2) {
                 queryMode = Integer.parseInt(br.readLine());
+
                 if (queryMode == 1) {
                     testQuery = getTestQueryFromFile();
                 }
